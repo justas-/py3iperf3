@@ -10,8 +10,8 @@
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
-    <Name>py3-iperf3</Name>
-    <RootNamespace>py3-iperf3</RootNamespace>
+    <Name>py3iperf3</Name>
+    <RootNamespace>py3iperf3</RootNamespace>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
