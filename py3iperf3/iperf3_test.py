@@ -14,8 +14,9 @@ from py3iperf3.test_settings import TestSettings
 class Iperf3Test(object):
     """description of class"""
 
-    def __init__(self, loop=None, test_parameters=None):
+    def __init__(self, master=None, loop=None, test_parameters=None):
         """ """
+        self._master = master   # Ref to Client or Server
         self._loop = loop
         self._parameters = TestSettings()
         self._set_test_parameters(test_parameters)
@@ -25,9 +26,25 @@ class Iperf3Test(object):
 
         self._streams = []
 
+        self._role = 'c'                # Default role is 'c'-lient
         self._cookie = None
         self._control_protocol = None
         self._state = None
+        self._remote_results = None
+        self._sender = True
+
+        self._string_drain = False
+        self._string_length = None
+        self._string_buffer = bytearray()
+
+    @property
+    def remote_results(self):
+        """Get results received from remote peer"""
+        return self._remote_results
+
+    @property
+    def role(self):
+        return self._role
 
     @property
     def cookie(self):
@@ -43,7 +60,6 @@ class Iperf3Test(object):
 
     def run(self):
         """Start the test"""
-
         self._connect_to_server()
 
     def stop(self):
@@ -61,6 +77,11 @@ class Iperf3Test(object):
 
     def handle_server_message(self, message):
         """Handle message received from the control socket"""
+
+        # Special handling of length prefixed strings
+        if self._string_drain:
+            self._drain_to_string(message)
+            return
 
         if len(message) == 1:
             op_codes = struct.unpack('>B', message)
@@ -107,9 +128,12 @@ class Iperf3Test(object):
             elif self._state == Iperf3State.TEST_RUNNING:
                 logging.info('Test is running!')
             elif self._state == Iperf3State.EXCHANGE_RESULTS:
-                pass
+                self._send_results()
+                self._string_drain = True # Expect string reply from the server
+
             elif self._state == Iperf3State.DISPLAY_RESULTS:
-                pass
+                 logging.info('Received results: %s', self.remote_results)
+                 self._client_cleanup()
             elif self._state == Iperf3State.IPERF_DONE:
                 pass
             elif self._state == Iperf3State.SERVER_TERMINATE:
@@ -120,6 +144,93 @@ class Iperf3Test(object):
                 pass
             else:
                 logging.debug('Unknown state ID received')
+
+    def _client_cleanup(self):
+        # close all streams
+
+        # Graceful bye-bye to the server
+        self._set_and_send_state(Iperf3State.IPERF_DONE)
+
+        # close control socket
+        self._control_protocol.close_connection()
+
+        # Inform master that we are done!
+        self._master.test_done(self)
+
+    def _drain_to_string(self, message):
+
+        if self._string_length is None or len(self._string_buffer < 4):
+            # Drain to buffer until we have at least 4 bytes
+            self._string_buffer.extend(message)
+
+            # Return if still not enough data:
+            if len(self._string_buffer) < 4:
+                return
+            else:
+                # Parse string length
+                self._string_length = struct.unpack('!I', self._string_buffer[:4])[0]
+                self._string_buffer = self._string_buffer[4:]
+
+        # Keep draining until we have enough data
+        if len(self._string_buffer) < self._string_length:
+            return
+
+        # Decode the string
+        string_bytes = self._string_buffer[:self._string_length]
+        received_string = string_bytes.decode('ascii')
+
+        # Cleanup
+        scratch = self._string_buffer[self._string_length:]
+        self._string_length = None
+        self._string_buffer = []
+        self._string_drain = False
+
+        logging.debug('String draining done!')
+        self._save_received_results(received_string)
+        
+        # If anything extra is left - process as normal 
+        if len(scratch) > 0:
+            self.handle_server_message(scratch)
+
+    def _save_received_results(self, result_string):
+        """Save results string from the server"""
+
+        result_obj = json.loads(result_string)
+        self._remote_results = result_obj
+
+    def _send_results(self):
+        """Send test results to remote peer"""
+
+        results_obj = {}
+
+        results_obj["cpu_util_total"] = 0
+        results_obj["cpu_util_user"] = 0
+        results_obj["cpu_util_system"] = 0
+
+        results_obj["sender_has_retransmits"] = 0
+        results_obj["congestion_used"] = "Unknown"
+        results_obj["streams"]=[]
+
+        for stream in self._streams:
+            stream_stat_obj = {}
+
+            stream_stat_obj["id"] = 1
+            stream_stat_obj["bytes"] = 1
+            stream_stat_obj["retransmits"] = 1
+            stream_stat_obj["jitter"] = 1
+            stream_stat_obj["errors"] = 1
+            stream_stat_obj["packets"] = 1
+            stream_stat_obj["start_time"] = 1
+            stream_stat_obj["end_time"] = 1
+
+            results_obj["streams"].append(stream_stat_obj)
+
+        json_string = json.dumps(results_obj)
+        logging.debug('Client stats JSON string: %s', json_string)
+
+        len_bytes = struct.pack('!i', len(json_string))
+        self._control_protocol.send_data(len_bytes)
+        self._control_protocol.send_data(json_string.encode('ascii'))
 
     def _stop_all_streams(self):
 

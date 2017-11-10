@@ -22,6 +22,7 @@ class Iperf3Client(object):
         """Create and return an instance of a test"""
 
         test = Iperf3Test(
+            master=self,
             loop=self._loop,
             test_parameters=test_parameters)
         self._tests.append(test)
@@ -38,3 +39,13 @@ class Iperf3Client(object):
 
         for test in self._tests:
             test.stop()
+
+    def test_done(self, test):
+        """Callback on test completed"""
+        
+        # Remove the test
+        self._tests.remove(test)
+
+        # If we removed the last - stop the client
+        if len(self._tests) == 0:
+            self._loop.stop()

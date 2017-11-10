@@ -12,6 +12,7 @@ class ControlProtocol(asyncio.Protocol):
         self._transport = None
         self._test = test
         self._peer_data = None
+        self._is_closed = False
 
     def connection_made(self, transport):
         """Connection made callback"""
@@ -22,7 +23,8 @@ class ControlProtocol(asyncio.Protocol):
 
     def connection_lost(self, exc):
         """Connection lost callback"""
-        logging.debug('Control connection lost!', exc_info=exc)
+        if not self._is_closed:
+            logging.debug('Control connection lost!', exc_info=exc)
 
     def data_received(self, data):
         """Data received callback"""
@@ -37,6 +39,7 @@ class ControlProtocol(asyncio.Protocol):
     def close_connection(self):
         """Close connection to the server"""
         logging.debug('Closing connection to the server')
+        self._is_closed = True
         self._transport.close()
 
     def get_tcp_mss(self):
