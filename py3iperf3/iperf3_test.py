@@ -58,6 +58,14 @@ class Iperf3Test(object):
     def server_port(self):
         return self._parameters.server_port
 
+    @property
+    def data_protocol(self):
+        return self._parameters.test_protocol
+
+    @property
+    def block_size(self):
+        return self._parameters.block_size
+
     def run(self):
         """Start the test"""
         self._connect_to_server()

@@ -2,10 +2,12 @@
 Default run settings
 """
 
+from py3iperf3.iperf3_api import Iperf3TestProto
+
 class TestSettings(object):
     """Default settings of a test"""
 
-    test_protocol = 'T'
+    test_protocol = Iperf3TestProto.TCP
     server_address = ''
     server_port = 0
 
@@ -18,3 +20,5 @@ class TestSettings(object):
     parallel = 1
     reverse = False
     title = None
+
+    block_size = 128 * 1024
