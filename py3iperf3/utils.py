@@ -1,3 +1,6 @@
+"""
+Various utility functions
+"""
 import random
 import string
 

@@ -44,7 +44,10 @@ class Iperf3Client(object):
         """Callback on test completed"""
         
         # Remove the test
-        self._tests.remove(test)
+        try:
+            self._tests.remove(test)
+        except ValueError:
+            logging.error('Given test was not in the tests list')
 
         # If we removed the last - stop the client
         if len(self._tests) == 0:

@@ -1,3 +1,7 @@
+"""
+Default run settings
+"""
+
 class TestSettings(object):
     """Default settings of a test"""
 

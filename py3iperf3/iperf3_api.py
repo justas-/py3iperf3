@@ -1,3 +1,6 @@
+"""
+Various constants from the official C implementation of iPerf3.
+"""
 import enum
 import socket
 

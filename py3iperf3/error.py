@@ -1,6 +1,7 @@
+"""
+Runtime exception definition
+"""
 
-class PyiPerf3Exception(Exception):
-    """description of class"""
-
-    def __init__(self, **kwargs):
-        return super().__init__(**kwargs)
+class IPerf3Exception(Exception):
+    """Class for runtime program errors"""
+    pass

@@ -12,6 +12,8 @@
     <OutputPath>.</OutputPath>
     <Name>py3iperf3</Name>
     <RootNamespace>py3iperf3</RootNamespace>
+    <InterpreterId>{2af0f10d-7135-4994-9156-5d01c9c11b7e}</InterpreterId>
+    <InterpreterVersion>3.5</InterpreterVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -56,6 +58,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="testapp.py" />
+    <Compile Include="tests\test_client.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="tests\test_util.py">
       <SubType>Code</SubType>
     </Compile>
@@ -63,6 +68,9 @@
   <ItemGroup>
     <Folder Include="tests\" />
     <Folder Include="py3iperf3\" />
+  </ItemGroup>
+  <ItemGroup>
+    <InterpreterReference Include="{2af0f10d-7135-4994-9156-5d01c9c11b7e}\3.5" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

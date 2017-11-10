@@ -8,7 +8,7 @@ from py3iperf3.control_protocol import ControlProtocol
 from py3iperf3.utils import make_cookie
 from py3iperf3.iperf3_api import Iperf3State
 from py3iperf3.test_stream import TestStream
-from py3iperf3.error import PyiPerf3Exception
+from py3iperf3.error import IPerf3Exception
 from py3iperf3.test_settings import TestSettings
 
 class Iperf3Test(object):
@@ -90,7 +90,7 @@ class Iperf3Test(object):
             op_codes = struct.unpack('>BB', message)
             logging.debug("codes: %s", op_codes)
         else:
-            raise PyiPerf3Exception('Whoopsy Daisy too many op-codes from the server!')
+            raise IPerf3Exception('Whoopsy Daisy too many op-codes from the server!')
 
         for op_code in op_codes:
             logging.debug('Op code: %s', op_code)
@@ -139,7 +139,7 @@ class Iperf3Test(object):
             elif self._state == Iperf3State.SERVER_TERMINATE:
                 pass
             elif self._state == Iperf3State.ACCESS_DENIED:
-                raise PyiPerf3Exception('Access Denied')
+                raise IPerf3Exception('Access Denied')
             elif self._state == Iperf3State.SERVER_ERROR:
                 pass
             else:
@@ -159,7 +159,7 @@ class Iperf3Test(object):
 
     def _drain_to_string(self, message):
 
-        if self._string_length is None or len(self._string_buffer < 4):
+        if self._string_length is None:
             # Drain to buffer until we have at least 4 bytes
             self._string_buffer.extend(message)
 
@@ -170,6 +170,8 @@ class Iperf3Test(object):
                 # Parse string length
                 self._string_length = struct.unpack('!I', self._string_buffer[:4])[0]
                 self._string_buffer = self._string_buffer[4:]
+        else:
+            self._string_buffer.extend(message)
 
         # Keep draining until we have enough data
         if len(self._string_buffer) < self._string_length:
@@ -182,7 +184,7 @@ class Iperf3Test(object):
         # Cleanup
         scratch = self._string_buffer[self._string_length:]
         self._string_length = None
-        self._string_buffer = []
+        self._string_buffer = bytearray()
         self._string_drain = False
 
         logging.debug('String draining done!')
@@ -291,7 +293,7 @@ class Iperf3Test(object):
         #param_obj['get_server_output'] = 1
         #param_obj['udp_counters_64bit'] = 1
         #param_obj['authtoken'] = ''
-        param_obj['client_version'] = 'py3-iPerf3_v0.9'
+        param_obj['client_version'] = 'py3iPerf3_v0.9'
 
         json_str = json.dumps(param_obj)
         logging.debug('Settings JSON (%s): %s',
