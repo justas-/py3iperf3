@@ -10,8 +10,8 @@ class TcpTestProtocol(asyncio.Protocol):
 
     def connection_made(self, transport):
         self._transport = transport
-        self._peer_data = transport.get_extra_info('peername')
-        logging.debug('TCP Test connection made! Peer: %s', self._peer_data)
+        peer_data = transport.get_extra_info('peername')
+        logging.debug('TCP Test connection made! Peer: %s', peer_data)
 
         self._stream.connection_established(self)
 
@@ -23,5 +23,3 @@ class TcpTestProtocol(asyncio.Protocol):
 
     def send_data(self, data):
         self._transport.write(data)
-
-

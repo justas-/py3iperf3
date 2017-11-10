@@ -240,5 +240,6 @@ ModelManifest.xml
 
 # FAKE - F# Make
 .fake/
-/py3-iperf3/py3iperf3/__pycache__
-/py3-iperf3/tests/__pycache__
+
+/py3iperf3/__pycache__
+/tests/__pycache__

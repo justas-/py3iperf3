@@ -1,6 +1,7 @@
 import unittest
 
-from py3iperf3.utils import *
+from py3iperf3.iperf3_api import COOKIE_SIZE
+from py3iperf3.utils import make_cookie
 
 class TestUtilFunctions(unittest.TestCase):
     """description of class"""

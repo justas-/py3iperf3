@@ -18,7 +18,7 @@ class TestStream(object):
 
     def create_connection(self):
         """Create protocol connection to the server"""
-        
+
         try:
             connect_coro = self._loop.create_connection(
                 lambda: TcpTestProtocol(test_stream=self),
@@ -68,4 +68,3 @@ class TestStream(object):
             self._sending_handle = None
 
         self.done = True
-

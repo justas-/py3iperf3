@@ -1,6 +1,5 @@
 import logging
 import asyncio
-import string
 import struct
 import json
 import time
@@ -65,10 +64,10 @@ class Iperf3Test(object):
 
         if len(message) == 1:
             op_codes = struct.unpack('>B', message)
-            logging.debug("codes: %s",op_codes)
+            logging.debug("codes: %s", op_codes)
         elif len(message) == 2:
             op_codes = struct.unpack('>BB', message)
-            logging.debug("codes: %s",op_codes)
+            logging.debug("codes: %s", op_codes)
         else:
             raise PyiPerf3Exception('Whoopsy Daisy too many op-codes from the server!')
 
@@ -81,7 +80,7 @@ class Iperf3Test(object):
             if self._state == Iperf3State.PARAM_EXCHANGE:
                 # Exchange params
                 self._exchange_parameters()
-            
+
                 # Run on_connect callbacks
                 for cb_func in self._cb_on_connect:
                     cb_func(self)
@@ -156,7 +155,7 @@ class Iperf3Test(object):
 
     def _exchange_parameters(self):
         """Send test parameters to the server"""
-        
+
         param_obj = {}
         param_obj['tcp'] = True
         param_obj['omit'] = 0
@@ -184,7 +183,6 @@ class Iperf3Test(object):
         param_obj['client_version'] = 'py3-iPerf3_v0.9'
 
         json_str = json.dumps(param_obj)
-        json_str = json_str.replace(" ","")
         logging.debug('Settings JSON (%s): %s',
                       len(json_str), json_str)
 

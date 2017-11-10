@@ -8,7 +8,7 @@ class Iperf3Client(object):
 
     def __init__(self, loop=None, use_processes=False):
         """Initialize the client"""
-        
+
         if loop is None:
             self._loop = asyncio.get_event_loop()
         else:
@@ -20,7 +20,7 @@ class Iperf3Client(object):
 
     def create_test(self, test_parameters):
         """Create and return an instance of a test"""
-        
+
         test = Iperf3Test(
             loop=self._loop,
             test_parameters=test_parameters)
@@ -29,12 +29,12 @@ class Iperf3Client(object):
 
     def run_all_tests(self):
         """Run all tests"""
-        
+
         for test in self._tests:
             test.run()
-        
+
     def stop_all_tests(self):
         """Request all tests to stop"""
 
-        for test in self._tests():
+        for test in self._tests:
             test.stop()
