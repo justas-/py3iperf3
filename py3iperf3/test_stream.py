@@ -7,7 +7,7 @@ from py3iperf3.tcp_test_protocol import TcpTestProtocol
 from py3iperf3.iperf3_api import Iperf3TestProto
 
 class TestStream(object):
-    """description of class"""
+    """A single test data stream"""
 
     def __init__(self, **kwargs):
         self._loop = kwargs.get('loop')
@@ -26,6 +26,36 @@ class TestStream(object):
         self._blocks_tx_this_interval = 0
         self._pkt_tx_this_interval = 0
         self._pkt_rx_this_interval = 0
+
+    def get_stream_interval_stats(self):
+        """Get (and reset) interval stats"""
+
+        # TODO: Change for TCP/UDP
+
+        if self._test.sender:
+            num_bytes = self._bytes_tx_this_interval
+        else:
+            num_bytes = self._bytes_rx_this_interval
+
+        stats = {
+		    "socket":	        1,
+			"start":	        None,
+			"end":	            None,
+			"seconds":	        None,
+			"bytes":	        num_bytes,
+			"bits_per_second":	None,
+			"retransmits":	    0,
+			"snd_cwnd":	        0,
+			"omitted":	        False
+        }
+
+        self._bytes_rx_this_interval = 0
+        self._bytes_tx_this_interval = 0
+        self._blocks_tx_this_interval = 0
+        self._pkt_tx_this_interval = 0
+        self._pkt_rx_this_interval = 0
+
+        return stats
 
     def create_connection(self):
         """Create protocol connection to the server"""

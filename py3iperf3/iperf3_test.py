@@ -21,21 +21,31 @@ class Iperf3Test(object):
         self._parameters = TestSettings()
         self._set_test_parameters(test_parameters)
 
-        # Call-backs
-        self._cb_on_connect = []
-
         self._streams = []
+        self._interval_stats = []
+
+        # Event handles
+        self._hdl_stop_test = None
+        self._hdl_omitting = None
+        self._hdl_stats = None
 
         self._role = 'c'                # Default role is 'c'-lient
         self._cookie = None
         self._control_protocol = None
         self._state = None
         self._remote_results = None
-        self._sender = True
 
+        self._last_stat_collect_time = None
+        self._stream_start_time = None
+
+        # Length prefixed strings reception
         self._string_drain = False
         self._string_length = None
         self._string_buffer = bytearray()
+
+    @property
+    def sender(self):
+        return not self._parameters.reverse
 
     @property
     def remote_results(self):
@@ -110,9 +120,6 @@ class Iperf3Test(object):
                 # Exchange params
                 self._exchange_parameters()
 
-                # Run on_connect callbacks
-                for cb_func in self._cb_on_connect:
-                    cb_func(self)
             elif self._state == Iperf3State.CREATE_STREAMS:
                 # Create required streams
                 self._create_streams()
@@ -126,12 +133,22 @@ class Iperf3Test(object):
 	            #if (!test->reverse)
 		        #   if (iperf_create_send_timers(test) < 0)
 		        #       return -1;
-                for stream in self._streams:
-                    stream.start_stream()
 
-                self._loop.call_later(
+                
+
+                if not self._parameters.reverse:
+                    for stream in self._streams:
+                        stream.start_stream()
+
+                self._stream_start_time = time.time()
+
+                self._hdl_stop_test = self._loop.call_later(
                     self._parameters.test_duration,
                     self._stop_all_streams)
+
+                self._hdl_stats = self._loop.call_later(
+                    self._parameters.report_interval,
+                    self._collect_print_stats)
 
             elif self._state == Iperf3State.TEST_RUNNING:
                 logging.info('Test is running!')
@@ -152,6 +169,54 @@ class Iperf3Test(object):
                 pass
             else:
                 logging.debug('Unknown state ID received')
+
+    def _collect_print_stats(self):
+        """Collect and print periodic statistics"""
+        
+        all_stream_stats = []
+        t_now = time.time()
+
+        if self._last_stat_collect_time is None:
+            scratch_start = 0
+        else:
+            scratch_start = self._last_stat_collect_time - self._stream_start_time
+        
+        scratch_end = t_now - self._stream_start_time
+        scratch_seconds = t_now - self._stream_start_time - scratch_start
+
+        self._last_stat_collect_time = t_now
+
+        for stream in self._streams:
+            stream_stats = stream.get_stream_interval_stats()
+            stream_stats['start'] = scratch_start
+            stream_stats['end'] = scratch_end
+            stream_stats['seconds'] = scratch_seconds
+            stream_stats['bits_per_second'] = stream_stats['bytes'] * 8 / stream_stats['seconds']
+
+            all_stream_stats.append(stream_stats)
+
+        sum_stats = {
+            "start":            scratch_start,
+			"end":	            scratch_end,
+			"seconds":	        scratch_seconds,
+			"bytes":	        sum([x['bytes'] for x in all_stream_stats]),
+			"bits_per_second":  sum([x['bits_per_second'] for x in all_stream_stats]),
+			"retransmits":	    sum([x['retransmits'] for x in all_stream_stats]),
+			"omitted":	        False
+        }
+
+        stat_ob = {
+            "streams" : all_stream_stats,
+            "sum" : sum_stats
+        }
+
+        self._interval_stats.append(stat_ob)
+
+        logging.info('From: {:.2f} To: {:.2f} bps: {:,d}'.format(scratch_start, scratch_end, int(sum_stats['bits_per_second'])))
+
+        self._hdl_stats = self._loop.call_later(
+            self._parameters.report_interval,
+            self._collect_print_stats)
 
     def _client_cleanup(self):
         # close all streams
