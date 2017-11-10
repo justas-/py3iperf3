@@ -4,4 +4,4 @@ python:
   - "3.6"
 
 script:
-  - py.test
+  - py.test --ignore=py3iperf3/
