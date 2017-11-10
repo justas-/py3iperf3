@@ -61,6 +61,9 @@
     <Compile Include="tests\test_client.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="tests\test_test.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="tests\test_util.py">
       <SubType>Code</SubType>
     </Compile>
@@ -71,6 +74,9 @@
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="{2af0f10d-7135-4994-9156-5d01c9c11b7e}\3.5" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="To-do.txt" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

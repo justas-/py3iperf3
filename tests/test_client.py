@@ -69,7 +69,8 @@ class TestIperf3ClientClass(unittest.TestCase):
         self.assertTrue(test1.stop.called)
         self.assertTrue(test2.stop.called)
 
-    def test_process_finished(self):
+    @unittest.mock.patch('logging.error')
+    def test_process_finished(self, le):
         """Test removal of the finished tests"""
 
         mock_loop = unittest.mock.Mock()
@@ -91,3 +92,8 @@ class TestIperf3ClientClass(unittest.TestCase):
 
         self.assertNotIn(mock_test2, client._tests)
         self.assertTrue(mock_loop.stop.called)
+
+        # Remove non-existing test
+
+        client.test_done(mock_test2)
+        self.assertTrue(le.called)

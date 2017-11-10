@@ -14,7 +14,7 @@ from py3iperf3.test_settings import TestSettings
 class Iperf3Test(object):
     """description of class"""
 
-    def __init__(self, master=None, loop=None, test_parameters=None):
+    def __init__(self, master, loop, test_parameters):
         """ """
         self._master = master   # Ref to Client or Server
         self._loop = loop
@@ -58,6 +58,9 @@ class Iperf3Test(object):
 
     @property
     def cookie(self):
+        if self._cookie is None:
+            self._cookie = make_cookie()
+
         return self._cookie
 
     @property
@@ -89,9 +92,8 @@ class Iperf3Test(object):
         self._control_protocol = control_protocol
 
         # Make and send cookie
-        self._cookie = make_cookie()
         self._control_protocol.send_data(
-            self._cookie.encode('ascii'))
+            self.cookie.encode('ascii'))
 
     def handle_server_message(self, message):
         """Handle message received from the control socket"""
