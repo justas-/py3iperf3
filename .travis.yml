@@ -5,3 +5,4 @@ python:
 
 script:
   - py.test
+  - coveralls
