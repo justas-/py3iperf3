@@ -12,6 +12,7 @@ class TestStream(object):
     def __init__(self, **kwargs):
         self._loop = kwargs.get('loop')
         self._test = kwargs.get('test')
+        self._logger = logging.getLogger('py3iperf3')
 
         self.done = False
 
@@ -67,7 +68,7 @@ class TestStream(object):
                 self._test.server_port)
             self._loop.create_task(connect_coro)
         except Exception as exc:
-            logging.exception('Exception connecting to the server!', exc_info=exc)
+            self._logger.exception('Exception connecting to the server!', exc_info=exc)
 
     def connection_established(self, test_protocol):
         """Call-back: Connection to the server established"""
@@ -76,7 +77,7 @@ class TestStream(object):
         self._test_protocol.send_data(
             self._test.cookie.encode('ascii'))
 
-        logging.info('Stream: Sent cookie')
+        self._logger.info('Stream: Sent cookie')
 
     def data_received(self, data):
         """Call-back: Data received on the test data connection"""
@@ -115,7 +116,7 @@ class TestStream(object):
     def start_stream(self):
         """Start sending data"""
 
-        logging.debug('Start stream called')
+        self._logger.debug('Start stream called')
         self._time_stream_start = time.time()
 
         if self._sending_handle is None:
@@ -124,7 +125,7 @@ class TestStream(object):
     def stop_stream(self):
         """Stop sending data"""
 
-        logging.debug('Stop stream called')
+        self._logger.debug('Stop stream called')
         self._time_stream_stop = time.time()
 
         if self._sending_handle is not None:

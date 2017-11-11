@@ -14,22 +14,24 @@ class ControlProtocol(asyncio.Protocol):
         self._peer_data = None
         self._is_closed = False
 
+        self._logger = logging.getLogger('py3iperf3')
+
     def connection_made(self, transport):
         """Connection made callback"""
         self._transport = transport
         self._peer_data = transport.get_extra_info('peername')
-        logging.debug('Control connection made! Peer: %s', self._peer_data)
+        self._logger.debug('Control connection made! Peer: %s', self._peer_data)
         self._test.server_connection_established(self)
 
     def connection_lost(self, exc):
         """Connection lost callback"""
         if not self._is_closed:
-            logging.debug('Control connection lost!', exc_info=exc)
+            self._logger.debug('Control connection lost!', exc_info=exc)
 
     def data_received(self, data):
         """Data received callback"""
-        logging.info('Control connection data received. Len: %s bytes', len(data))
-        logging.debug('RX data: %s', binascii.hexlify(data))
+        self._logger.info('Control connection data received. Len: %s bytes', len(data))
+        self._logger.debug('RX data: %s', binascii.hexlify(data))
         self._test.handle_server_message(data)
 
     def send_data(self, data):
@@ -38,7 +40,7 @@ class ControlProtocol(asyncio.Protocol):
 
     def close_connection(self):
         """Close connection to the server"""
-        logging.debug('Closing connection to the server')
+        self._logger.debug('Closing connection to the server')
         self._is_closed = True
         self._transport.close()
 

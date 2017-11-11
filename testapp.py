@@ -1,19 +1,24 @@
 import logging
 import asyncio
+import pathlib
 import os
 
 from py3iperf3.iperf3_client import Iperf3Client
-
-logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] %(asctime)s %(message)s')
+from py3iperf3.utils import setup_logging
 
 if __name__ == '__main__':
-    logging.info('Starting program')
     loop = asyncio.get_event_loop()
 
     params = {
         'server_address':'127.0.0.1',
         'server_port':5201,
+        'client_port':1337,
+        'ip_version':4,
+        'debug': True,
+        'log_filename':r'C:\py\test.txt',
     }
+
+    setup_logging(**params)
 
     iperf3_client = Iperf3Client(loop=loop)
     iperf3_test = iperf3_client.create_test(test_parameters=params)

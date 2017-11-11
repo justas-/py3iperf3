@@ -1,2 +1,2 @@
-class TestServer(object):
-    """Implements running o"""
+class Iperf3Server(object):
+    """Big ToDo"""

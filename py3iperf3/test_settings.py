@@ -14,6 +14,7 @@ class TestSettings(object):
     client_address = None
     client_port = None
 
+    ip_version = None
     test_duration = 10
     report_interval = 1
     no_delay = False

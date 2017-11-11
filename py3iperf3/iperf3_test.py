@@ -1,5 +1,6 @@
 import logging
 import asyncio
+import socket
 import struct
 import json
 import time
@@ -20,6 +21,7 @@ class Iperf3Test(object):
         self._loop = loop
         self._parameters = TestSettings()
         self._set_test_parameters(test_parameters)
+        self._logger = logging.getLogger('py3iperf3')
 
         self._streams = []
         self._interval_stats = []
@@ -105,17 +107,17 @@ class Iperf3Test(object):
 
         if len(message) == 1:
             op_codes = struct.unpack('>B', message)
-            logging.debug("codes: %s", op_codes)
+            self._logger.debug("codes: %s", op_codes)
         elif len(message) == 2:
             op_codes = struct.unpack('>BB', message)
-            logging.debug("codes: %s", op_codes)
+            self._logger.debug("codes: %s", op_codes)
         else:
             raise IPerf3Exception('Whoopsy Daisy too many op-codes from the server!')
 
         for op_code in op_codes:
-            logging.debug('Op code: %s', op_code)
+            self._logger.debug('Op code: %s', op_code)
             state = Iperf3State(op_code)
-            logging.debug('Received %s state from server', state)
+            self._logger.debug('Received %s state from server', state)
             self._state = state
 
             if self._state == Iperf3State.PARAM_EXCHANGE:
@@ -153,13 +155,13 @@ class Iperf3Test(object):
                     self._collect_print_stats)
 
             elif self._state == Iperf3State.TEST_RUNNING:
-                logging.info('Test is running!')
+                self._logger.info('Test is running!')
             elif self._state == Iperf3State.EXCHANGE_RESULTS:
                 self._send_results()
                 self._string_drain = True # Expect string reply from the server
 
             elif self._state == Iperf3State.DISPLAY_RESULTS:
-                 logging.info('Received results: %s', self.remote_results)
+                 self._logger.info('Received results: %s', self.remote_results)
                  self._client_cleanup()
             elif self._state == Iperf3State.IPERF_DONE:
                 pass
@@ -170,7 +172,7 @@ class Iperf3Test(object):
             elif self._state == Iperf3State.SERVER_ERROR:
                 pass
             else:
-                logging.debug('Unknown state ID received')
+                self._logger.debug('Unknown state ID received')
 
     def _collect_print_stats(self):
         """Collect and print periodic statistics"""
@@ -214,7 +216,7 @@ class Iperf3Test(object):
 
         self._interval_stats.append(stat_ob)
 
-        logging.info('From: {:.2f} To: {:.2f} bps: {:,d}'.format(scratch_start, scratch_end, int(sum_stats['bits_per_second'])))
+        self._logger.info('From: {:.2f} To: {:.2f} bps: {:,d}'.format(scratch_start, scratch_end, int(sum_stats['bits_per_second'])))
 
         self._hdl_stats = self._loop.call_later(
             self._parameters.report_interval,
@@ -262,7 +264,7 @@ class Iperf3Test(object):
         self._string_buffer = bytearray()
         self._string_drain = False
 
-        logging.debug('String draining done!')
+        self._logger.debug('String draining done!')
         self._save_received_results(received_string)
         
         # If anything extra is left - process as normal 
@@ -303,7 +305,7 @@ class Iperf3Test(object):
             results_obj["streams"].append(stream_stat_obj)
 
         json_string = json.dumps(results_obj)
-        logging.debug('Client stats JSON string: %s', json_string)
+        self._logger.debug('Client stats JSON string: %s', json_string)
 
         len_bytes = struct.pack('!i', len(json_string))
         self._control_protocol.send_data(len_bytes)
@@ -311,7 +313,7 @@ class Iperf3Test(object):
 
     def _stop_all_streams(self):
 
-        logging.debug('Stopping all streams!')
+        self._logger.debug('Stopping all streams!')
 
         for stream in self._streams:
             stream.stop_stream()
@@ -321,7 +323,7 @@ class Iperf3Test(object):
     def _set_and_send_state(self, state):
         """Set test state and send op_code"""
 
-        logging.debug('Set and send state: %s', state)
+        self._logger.debug('Set and send state: %s', state)
 
         self._state = state
         self._control_protocol.send_data(
@@ -371,7 +373,7 @@ class Iperf3Test(object):
         param_obj['client_version'] = 'py3iPerf3_v0.9'
 
         json_str = json.dumps(param_obj)
-        logging.debug('Settings JSON (%s): %s',
+        self._logger.debug('Settings JSON (%s): %s',
                       len(json_str), json_str)
 
         len_bytes = struct.pack('!i', len(json_str))
@@ -382,9 +384,50 @@ class Iperf3Test(object):
     def _connect_to_server(self):
         """Make a control connection to the server"""
 
-        logging.info('Connecting to server %s:%s',
+        self._logger.info('Connecting to server %s:%s',
                      self._parameters.server_address,
                      self._parameters.server_port)
+
+        # Connect to
+        connect_params = {
+            'host' : self._parameters.server_address,
+            'port' : self._parameters.server_port
+        }
+
+        # Bind on
+        if (self._parameters.client_address is not None or
+            self._parameters.client_port is not None):
+
+            if self._parameters.client_address is None:
+                if (self._parameters.ip_version is not None and
+                    self._parameters.ip_version == 6):
+
+                    local_addr = '::'
+                else:
+                    local_addr = '0.0.0.0'
+
+            else:
+                local_addr = self._parameters.client_address
+
+            if self._parameters.client_port is None:
+                local_port = 0
+            else:
+                local_port = self._parameters.client_port
+
+            connect_params['local_addr'] = (local_addr, local_port)
+        
+        # IP Version
+        if (self._parameters.ip_version is not None and
+            self._parameters.ip_version == 4):
+
+            connect_params['family'] = socket.AF_INET
+
+        elif (self._parameters.ip_version is not None and
+              self._parameters.ip_version == 6):
+
+            connect_params['family'] = socket.AF_INET6
+
+        self._logger.debug('Connect params: %s', connect_params)
 
         # Try to connect
         num_retries = 1
@@ -392,15 +435,14 @@ class Iperf3Test(object):
             try:
                 control_connect_coro = self._loop.create_connection(
                     lambda: ControlProtocol(self),
-                    self._parameters.server_address,
-                    self._parameters.server_port)
+                    **connect_params)
                 self._loop.create_task(control_connect_coro)
                 break
             except Exception as exc:
-                logging.exception('Exception connecting to the server!', exc_info=exc)
+                self._logger.exception('Exception connecting to the server!', exc_info=exc)
                 time.sleep(1)
                 num_retries -= 1
 
         if num_retries == 0:
-            logging.error('Failed to connect to the server!')
+            self._logger.error('Failed to connect to the server!')
             return -1

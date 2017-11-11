@@ -9,6 +9,11 @@ import unittest.mock
 from py3iperf3.iperf3_client import Iperf3Client
 from py3iperf3.iperf3_test import Iperf3Test
 
+def fake_get_logger(name):
+    """Fake getting of a logger"""
+    if name == 'py3iperf3':
+        return unittest.mock.MagicMock()
+
 def fake_get_event_loop():
     """Replacement for asyncio.get_event_loop()"""
     return 'Fake'
@@ -69,7 +74,7 @@ class TestIperf3ClientClass(unittest.TestCase):
         self.assertTrue(test1.stop.called)
         self.assertTrue(test2.stop.called)
 
-    @unittest.mock.patch('logging.error')
+    @unittest.mock.patch('logging.getLogger')
     def test_process_finished(self, le):
         """Test removal of the finished tests"""
 
@@ -94,6 +99,5 @@ class TestIperf3ClientClass(unittest.TestCase):
         self.assertTrue(mock_loop.stop.called)
 
         # Remove non-existing test
-
         client.test_done(mock_test2)
-        self.assertTrue(le.called)
+        self.assertTrue(le.error)

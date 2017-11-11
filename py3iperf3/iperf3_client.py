@@ -15,6 +15,7 @@ class Iperf3Client(object):
             self._loop = loop
 
         self._use_processes = use_processes
+        self._logger = logging.getLogger('py3iperf3')
 
         self._tests = []
 
@@ -47,7 +48,7 @@ class Iperf3Client(object):
         try:
             self._tests.remove(test)
         except ValueError:
-            logging.error('Given test was not in the tests list')
+            self._logger.error('Given test was not in the tests list')
 
         # If we removed the last - stop the client
         if len(self._tests) == 0:
