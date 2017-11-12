@@ -9,11 +9,6 @@ import unittest.mock
 from py3iperf3.iperf3_client import Iperf3Client
 from py3iperf3.iperf3_test import Iperf3Test
 
-def fake_get_logger(name):
-    """Fake getting of a logger"""
-    if name == 'py3iperf3':
-        return unittest.mock.MagicMock()
-
 def fake_get_event_loop():
     """Replacement for asyncio.get_event_loop()"""
     return 'Fake'

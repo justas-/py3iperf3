@@ -1,6 +1,5 @@
 import logging
 import asyncio
-import pathlib
 import os
 
 from py3iperf3.iperf3_client import Iperf3Client

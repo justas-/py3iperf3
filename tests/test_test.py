@@ -73,3 +73,19 @@ class TestIperf3TestClass(unittest.TestCase):
         cookie_str = iperf_test.cookie
 
         self.assertEqual(iperf_test.cookie, cookie_str)
+
+    def test_server_connection_saved_and_cookie_tx(self):
+        """
+        Test saving of server control protocol and sending
+        of the cookie.
+        """
+
+        fake_proto = unittest.mock.MagicMock()
+        
+        iperf_test = Iperf3Test(None, None, {})
+        cookie_str = iperf_test.cookie
+
+        iperf_test.server_connection_established(fake_proto)
+
+        self.assertIs(iperf_test._control_protocol, fake_proto)
+        fake_proto.send_data.assert_called_with(cookie_str.encode('ascii'))
