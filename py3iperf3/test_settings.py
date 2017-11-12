@@ -21,5 +21,6 @@ class TestSettings(object):
     parallel = 1
     reverse = False
     title = None
+    format = None
 
     block_size = 128 * 1024

@@ -6,7 +6,7 @@ import json
 import time
 
 from py3iperf3.control_protocol import ControlProtocol
-from py3iperf3.utils import make_cookie
+from py3iperf3.utils import make_cookie, data_size_formatter
 from py3iperf3.iperf3_api import Iperf3State
 from py3iperf3.test_stream import TestStream
 from py3iperf3.error import IPerf3Exception
@@ -216,7 +216,17 @@ class Iperf3Test(object):
 
         self._interval_stats.append(stat_ob)
 
-        self._logger.info('From: {:.2f} To: {:.2f} bps: {:,d}'.format(scratch_start, scratch_end, int(sum_stats['bits_per_second'])))
+        if self._parameters.format is None:
+            # Autosizing
+            speed_str = data_size_formatter(
+                int(sum_stats['bits_per_second']), True, False)
+        else:
+            # Use specific format
+            speed_str = data_size_formatter(
+                int(sum_stats['bits_per_second']), None, None, self._parameters.format)
+
+        self._logger.info('From: {:.2f} To: {:.2f} Speed: {}/sec'.format(
+            scratch_start, scratch_end, speed_str))
 
         self._hdl_stats = self._loop.call_later(
             self._parameters.report_interval,

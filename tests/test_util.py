@@ -43,4 +43,18 @@ class TestUtilFunctions(unittest.TestCase):
 
         self.assertEqual(
             data_size_formatter(167654, False, False),
-            '0.16 mbit')
+            '163.72 kbit')
+        self.assertEqual(
+            data_size_formatter(76894335, False, False),
+            '73.33 mbit')
+
+    def test_exact_formatter(self):
+        """Test correct formatter with given prefix"""
+
+        self.assertEqual(
+            data_size_formatter(10000, False, False, 'k'),
+            '10 Kib')
+
+        self.assertEqual(
+            data_size_formatter(80000, False, False, 'K'),
+            '10 KiB')

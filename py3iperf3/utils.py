@@ -9,6 +9,11 @@ import os
 
 from py3iperf3.iperf3_api import COOKIE_SIZE
 
+DEC_BIT = ['bit', 'Kib', 'Mib', 'Gib', 'Tib', 'Pib']
+DEC_BYTE = ['Byte', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB']
+BIN_BIT = ['bit', 'kbit', 'mbit', 'gbit', 'tbit', 'pbit']
+BIN_BYTE = ['Byte', 'KByte', 'MByte', 'GByte', 'TByte', 'PByte']
+
 def make_cookie():
     """Make a test cookie"""
 
@@ -43,7 +48,32 @@ def setup_logging(debug=False, log_filename=None, **kwargs):
         file_handler.setFormatter(log_formatter)
         logger.addHandler(file_handler)
 
-def data_size_formatter(size_in_bits, decimal = False, bytes = False):
+def exact_formatter(size_in_bits, dimmesion):
+    """Format value to specific prefix"""
+
+    bin_bit_dimm = {
+        'k':1,
+        'm':2,
+        'g':3,
+        't':4,
+        'p':5
+    }
+
+    size_index = bin_bit_dimm.get(dimmesion.lower(), 1)
+
+    if dimmesion[0].isupper():
+        # Bytes
+        digit_string = '{:.2f}'.format((size_in_bits / 8) / 10**(3 * size_index))
+        postfix = DEC_BYTE[size_index]
+    else:
+        # bits
+        digit_string = '{:.2f}'.format(size_in_bits / 10**(3 * size_index))
+        postfix = DEC_BIT[size_index]
+
+    digit_string = digit_string.rstrip('0').rstrip('.') if '.' in digit_string else digit_string
+    return '{} {}'.format(digit_string, postfix)
+
+def data_size_formatter(size_in_bits, decimal = False, bytes = False, dimmension = None):
     """Format size in bits to required dimmension"""
 
     if size_in_bits < 0:
@@ -53,34 +83,32 @@ def data_size_formatter(size_in_bits, decimal = False, bytes = False):
     if size_in_bits == 0:
         return '0 bit'
 
-    #TODO: Needs some love!
-    dec_bit = ['bit', 'Kib', 'Mib', 'Gib', 'Tib', 'Pib']
-    dec_byte = ['Byte', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB']
-    bin_bit = ['bit', 'kbit', 'mbit', 'gbit', 'tbit', 'pbit']
-    bin_byte = ['Byte', 'KByte', 'MByte', 'GByte', 'TByte', 'PByte']
+    # If exact dimmension is given - use it
+    if dimmension:
+        return exact_formatter(size_in_bits, dimmension)
 
     if decimal:
         # Decimal format
-        postfix = dec_bit
+        postfix = DEC_BIT
         size_val = size_in_bits
 
         if bytes:
             size_val = size_in_bits / 8
-            postfix = dec_byte
+            postfix = DEC_BYTE
 
         size_index = min([len(postfix)-1, int(math.floor(math.log10(size_val)/3))])
         digit_string = '{:.2f}'.format(size_val / 10**(3 * size_index))
 
     else:
         # Binary format
-        postfix = bin_bit
+        postfix = BIN_BIT
         size_val = size_in_bits
 
         if bytes:
             size_val = size_in_bits / 8
-            postfix = bin_byte
+            postfix = BIN_BYTE
 
-        size_index = min([len(postfix)-1, int(math.floor(math.log2(size_val)/8))])
+        size_index = min([len(postfix)-1, int(math.floor(math.log2(size_val)/10))])
         digit_string = '{:.2f}'.format(size_val / 1024**size_index)
 
     digit_string = digit_string.rstrip('0').rstrip('.') if '.' in digit_string else digit_string

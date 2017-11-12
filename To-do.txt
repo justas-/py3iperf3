@@ -1,6 +1,6 @@
 Server or Client:
 (OK)  -p, --port      #         server port to listen on/connect to
-  -f, --format    [kmgKMG]  format to report: Kbits, Mbits, KBytes, MBytes
+(OK)  -f, --format    [kmgKMG]  format to report: Kbits, Mbits, KBytes, MBytes
 (OK)  -i, --interval  #         seconds between periodic bandwidth reports
   -F, --file name           xmit/recv the specified file
 (OK)  -B, --bind      <host>    bind to a specific interface

@@ -15,6 +15,7 @@ if __name__ == '__main__':
         'ip_version':4,
         'debug': True,
         'log_filename':r'C:\py\test.txt',
+        'format':'g'
     }
 
     setup_logging(**params)
