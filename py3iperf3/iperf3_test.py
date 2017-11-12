@@ -359,22 +359,23 @@ class Iperf3Test(object):
         param_obj = {}
         param_obj['tcp'] = True
         param_obj['omit'] = 0
-        param_obj['time'] = 5
+        param_obj['time'] = self._parameters.test_duration
         #param_obj['num'] = 1
         #param_obj['blockcount'] = 1
         #param_obj['MSS'] = 1400
         #param_obj['nodelay'] = True
-        param_obj['parallel'] = 1
+        param_obj['parallel'] = self._parameters.parallel
         #param_obj['reverse'] = True
         #param_obj['window'] = 1
-        param_obj['len'] = 131072
+        param_obj['len'] = self._parameters.block_size
         #param_obj['bandwidth'] = 1
         #param_obj['fqrate'] = 1
         #param_obj['pacing_timer'] = 1
         #param_obj['burst'] = 1
         #param_obj['TOS'] = 1
         #param_obj['flowlabel'] = 1
-        #param_obj['title'] = 'test'
+        if self._parameters.title:
+            param_obj['title'] = self._parameters.title
         #param_obj['congestion'] = ''
         #param_obj['congestion_used'] = ''
         #param_obj['get_server_output'] = 1

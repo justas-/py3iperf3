@@ -3,11 +3,14 @@ Unit-test for Iperf3Test class
 """
 #pylint: disable=protected-access, no-member
 
+import random
+import struct
 import unittest
 import unittest.mock
 
 from py3iperf3.iperf3_test import Iperf3Test
 from py3iperf3.iperf3_api import Iperf3TestProto
+from py3iperf3.iperf3_api import Iperf3State
 
 def fake_cookie():
     """Fake cookie generator"""
@@ -89,3 +92,20 @@ class TestIperf3TestClass(unittest.TestCase):
 
         self.assertIs(iperf_test._control_protocol, fake_proto)
         fake_proto.send_data.assert_called_with(cookie_str.encode('ascii'))
+
+    @unittest.mock.patch('py3iperf3.iperf3_test.TestStream')
+    def test_streams_created(self, mock_stream):
+        """Test creation of multiple streams"""
+
+        num_parallel = random.randint(2, 5)
+        test_params = {
+            'parallel':num_parallel
+        }
+
+        iperf_test = Iperf3Test(None, None, test_params)
+        iperf_test.handle_server_message(struct.pack(
+            '!c', bytes([Iperf3State.CREATE_STREAMS.value])))
+
+        self.assertEqual(len(iperf_test._streams), num_parallel)
+        for test_stream in iperf_test._streams:
+            assert test_stream.create_connection.called
