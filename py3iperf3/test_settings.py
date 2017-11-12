@@ -13,7 +13,7 @@ class TestSettings(object):
 
     client_address = None
     client_port = None
-
+    block_size = None
     ip_version = None
     test_duration = 10
     report_interval = 1
@@ -22,5 +22,3 @@ class TestSettings(object):
     reverse = False
     title = None
     format = None
-
-    block_size = 128 * 1024

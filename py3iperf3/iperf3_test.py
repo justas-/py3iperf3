@@ -7,7 +7,8 @@ import time
 
 from py3iperf3.control_protocol import ControlProtocol
 from py3iperf3.utils import make_cookie, data_size_formatter
-from py3iperf3.iperf3_api import Iperf3State
+from py3iperf3.iperf3_api import Iperf3State, Iperf3TestProto
+from py3iperf3.iperf3_api import DEFAULT_BLOCK_TCP, DEFAULT_BLOCK_UDP
 from py3iperf3.test_stream import TestStream
 from py3iperf3.error import IPerf3Exception
 from py3iperf3.test_settings import TestSettings
@@ -344,6 +345,14 @@ class Iperf3Test(object):
 
         for attr, value in test_parameters.items():
             setattr(self._parameters, attr, value)
+
+        if self._parameters.block_size is None:
+            if self._parameters.test_protocol == Iperf3TestProto.TCP:
+                self._parameters.block_size = DEFAULT_BLOCK_TCP
+            elif self._parameters.test_protocol == Iperf3TestProto.UDP:
+                self._parameters.block_size = DEFAULT_BLOCK_UDP
+            else:
+                self._parameters.block_size = 1000
 
     def _create_streams(self):
         """Create test streams"""

@@ -9,7 +9,7 @@ import unittest
 import unittest.mock
 
 from py3iperf3.iperf3_test import Iperf3Test
-from py3iperf3.iperf3_api import Iperf3TestProto
+from py3iperf3.iperf3_api import Iperf3TestProto, DEFAULT_BLOCK_TCP, DEFAULT_BLOCK_UDP
 from py3iperf3.iperf3_api import Iperf3State
 
 def fake_cookie():
@@ -94,18 +94,40 @@ class TestIperf3TestClass(unittest.TestCase):
         fake_proto.send_data.assert_called_with(cookie_str.encode('ascii'))
 
     @unittest.mock.patch('py3iperf3.iperf3_test.TestStream')
-    def test_streams_created(self, mock_stream):
+    def test_streams_created_destroyed(self, mock_stream):
         """Test creation of multiple streams"""
 
         num_parallel = random.randint(2, 5)
         test_params = {
             'parallel':num_parallel
         }
+        mock_proto = unittest.mock.MagicMock()
 
         iperf_test = Iperf3Test(None, None, test_params)
+        iperf_test._control_protocol = mock_proto
         iperf_test.handle_server_message(struct.pack(
             '!c', bytes([Iperf3State.CREATE_STREAMS.value])))
 
+        # Ensure streams created and connect attempted
         self.assertEqual(len(iperf_test._streams), num_parallel)
         for test_stream in iperf_test._streams:
             assert test_stream.create_connection.called
+
+        # Ensure streams are stopped
+        iperf_test._stop_all_streams()
+        for test_stream in iperf_test._streams:
+            assert test_stream.stop_stream.called
+
+    def test_block_size_setting(self):
+        """Test various block size settings"""
+
+        # Default TCP:
+        iperf_test = Iperf3Test(None, None, {})
+        self.assertTrue(iperf_test.block_size, DEFAULT_BLOCK_TCP)
+
+        # Preset size
+        test_params = {
+            'block_size':31337
+        }
+        iperf_test = Iperf3Test(None, None, test_params)
+        self.assertTrue(iperf_test.block_size, 31337)

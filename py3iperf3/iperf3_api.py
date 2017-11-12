@@ -5,6 +5,8 @@ import enum
 import socket
 
 COOKIE_SIZE = 36
+DEFAULT_BLOCK_TCP = 128 * 1024
+DEFAULT_BLOCK_UDP = 8 * 1024
 
 class Iperf3TestProto(enum.Enum):
     TCP = socket.SOCK_STREAM
