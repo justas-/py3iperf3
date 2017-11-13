@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/justas-/py3iperf3.svg?branch=master)](https://travis-ci.org/justas-/py3iperf3)[![Coverage Status](https://coveralls.io/repos/github/justas-/py3iperf3/badge.svg?branch=master)](https://coveralls.io/github/justas-/py3iperf3?branch=master)
+[![Build Status](https://img.shields.io/travis/justas-/py3iperf3.svg)](https://travis-ci.org/justas-/py3iperf3) [![Coverage Status](https://img.shields.io/coveralls/github/justas-/py3iperf3.svg)](https://coveralls.io/github/justas-/py3iperf3?branch=master)
 
 # py3iperf3
 
