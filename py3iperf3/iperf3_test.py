@@ -1,3 +1,6 @@
+"""
+A class representing a single iPerf3 test on both client and the server.
+"""
 import logging
 import asyncio
 import socket
@@ -32,11 +35,16 @@ class Iperf3Test(object):
         self._hdl_omitting = None
         self._hdl_stats = None
 
-        self._role = 'c'                # Default role is 'c'-lient
+        self._role = 'c'                # Default role is 'c'-lient, other 's'-server
         self._cookie = None
         self._control_protocol = None
         self._state = None
         self._remote_results = None
+
+        self._test_stopper = 't'        # 't' - time; 'b' - blocks; 's' - data size
+        self._blocks_remaining = None
+        self._bytes_remaining = None
+        self._depleted_called = False
 
         self._last_stat_collect_time = None
         self._stream_start_time = None
@@ -81,6 +89,11 @@ class Iperf3Test(object):
     @property
     def block_size(self):
         return self._parameters.block_size
+
+    @property
+    def test_type(self):
+        # What stops the test (time/tx blocks/tx data)
+        return self._test_stopper
 
     def run(self):
         """Start the test"""
@@ -139,17 +152,16 @@ class Iperf3Test(object):
 		        #   if (iperf_create_send_timers(test) < 0)
 		        #       return -1;
 
-                
-
                 if not self._parameters.reverse:
                     for stream in self._streams:
                         stream.start_stream()
 
                 self._stream_start_time = time.time()
 
-                self._hdl_stop_test = self._loop.call_later(
-                    self._parameters.test_duration,
-                    self._stop_all_streams)
+                if self._test_stopper == 't':
+                    self._hdl_stop_test = self._loop.call_later(
+                        self._parameters.test_duration,
+                        self._stop_all_streams)
 
                 self._hdl_stats = self._loop.call_later(
                     self._parameters.report_interval,
@@ -162,8 +174,8 @@ class Iperf3Test(object):
                 self._string_drain = True # Expect string reply from the server
 
             elif self._state == Iperf3State.DISPLAY_RESULTS:
-                 self._logger.info('Received results: %s', self.remote_results)
-                 self._client_cleanup()
+                self._logger.info('Received results: %s', self.remote_results)
+                self._client_cleanup()
             elif self._state == Iperf3State.IPERF_DONE:
                 pass
             elif self._state == Iperf3State.SERVER_TERMINATE:
@@ -175,9 +187,19 @@ class Iperf3Test(object):
             else:
                 self._logger.debug('Unknown state ID received')
 
+    def sendable_data_depleted(self):
+        """Called when blockcount is set and no more blocks remain"""
+        # This could be implemented via the get/set property
+
+        if self._depleted_called:
+            return
+
+        self._depleted_called = True
+        self._stop_all_streams()
+
     def _collect_print_stats(self):
         """Collect and print periodic statistics"""
-        
+
         all_stream_stats = []
         t_now = time.time()
 
@@ -185,7 +207,7 @@ class Iperf3Test(object):
             scratch_start = 0
         else:
             scratch_start = self._last_stat_collect_time - self._stream_start_time
-        
+
         scratch_end = t_now - self._stream_start_time
         scratch_seconds = t_now - self._stream_start_time - scratch_start
 
@@ -277,9 +299,9 @@ class Iperf3Test(object):
 
         self._logger.debug('String draining done!')
         self._save_received_results(received_string)
-        
-        # If anything extra is left - process as normal 
-        if len(scratch) > 0:
+
+        # If anything extra is left - process as normal
+        if scratch:
             self.handle_server_message(scratch)
 
     def _save_received_results(self, result_string):
@@ -299,7 +321,7 @@ class Iperf3Test(object):
 
         results_obj["sender_has_retransmits"] = 0
         results_obj["congestion_used"] = "Unknown"
-        results_obj["streams"]=[]
+        results_obj["streams"] = []
 
         for stream in self._streams:
             stream_stat_obj = {}
@@ -354,6 +376,20 @@ class Iperf3Test(object):
             else:
                 self._parameters.block_size = 1000
 
+        # Remaining time counter
+        if self._parameters.test_duration:
+            self._test_stopper = 't'
+
+        # Remaining blocks counter
+        if self._parameters.blockcount:
+            self._blocks_remaining = self._parameters.blockcount
+            self._test_stopper = 'b'
+
+        # Remaining bytes counter
+        if self._parameters.bytes:
+            self._bytes_remaining = self._parameters.bytes
+            self._test_stopper = 's'
+
     def _create_streams(self):
         """Create test streams"""
 
@@ -369,8 +405,10 @@ class Iperf3Test(object):
         param_obj['tcp'] = True
         param_obj['omit'] = 0
         param_obj['time'] = self._parameters.test_duration
-        #param_obj['num'] = 1
-        #param_obj['blockcount'] = 1
+        if self._parameters.bytes:
+            param_obj['num'] = self._parameters.bytes
+        if self._parameters.blockcount:
+            param_obj['blockcount'] = self._parameters.blockcount
         #param_obj['MSS'] = 1400
         #param_obj['nodelay'] = True
         param_obj['parallel'] = self._parameters.parallel
@@ -435,7 +473,7 @@ class Iperf3Test(object):
                 local_port = self._parameters.client_port
 
             connect_params['local_addr'] = (local_addr, local_port)
-        
+
         # IP Version
         if (self._parameters.ip_version is not None and
             self._parameters.ip_version == 4):

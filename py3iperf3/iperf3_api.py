@@ -9,11 +9,13 @@ DEFAULT_BLOCK_TCP = 128 * 1024
 DEFAULT_BLOCK_UDP = 8 * 1024
 
 class Iperf3TestProto(enum.Enum):
+    """Protocol used to trasmit test data"""
     TCP = socket.SOCK_STREAM
     UDP = socket.SOCK_DGRAM
     SCTP = 12
 
 class Iperf3State(enum.Enum):
+    """iPerf3 test state"""
     TEST_START = 1
     TEST_RUNNING = 2
     RESULT_REQUEST = 3

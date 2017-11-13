@@ -1,3 +1,6 @@
+"""
+Asyncio protocol for test control communication.
+"""
 import asyncio
 import logging
 import socket

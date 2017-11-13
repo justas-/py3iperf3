@@ -22,3 +22,5 @@ class TestSettings(object):
     reverse = False
     title = None
     format = None
+    blockcount = None
+    bytes = None

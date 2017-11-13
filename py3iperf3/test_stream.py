@@ -1,6 +1,7 @@
-import asyncio
+"""
+A class representing a single data stream in iPerf3 test.
+"""
 import logging
-import struct
 import time
 
 from py3iperf3.tcp_test_protocol import TcpTestProtocol
@@ -21,6 +22,9 @@ class TestStream(object):
 
         self._time_stream_start = None
         self._time_stream_stop = None
+
+        self._block_size = self._test.block_size
+        self._stop_on = self._test.test_type
 
         self._bytes_tx_this_interval = 0
         self._bytes_rx_this_interval = 0
@@ -86,6 +90,49 @@ class TestStream(object):
         if self._test.data_protocol == Iperf3TestProto.UDP:
             self._pkt_rx_this_interval += 1
 
+    def _try_sending(self):
+        """Check the gating and send if possible"""
+
+        if self._stop_on == 't':
+            # Time based test will be stopped by the test class
+            self._send_block()
+            self._sending_handle = self._loop.call_soon(self._try_sending)
+
+        elif self._stop_on == 'b':
+            # Check the remianing block count
+            if self._test._blocks_remaining:
+                self._test._blocks_remaining -= 1
+                self._send_block()
+                self._sending_handle = self._loop.call_soon(self._try_sending)
+
+            else:
+                # No more blocks to send. Inform test and do not reschedule sending
+                self._sending_handle = None
+                self.done = True
+                self._test.sendable_data_depleted()
+
+        elif self._stop_on == 's':
+            # Check the remaining bytes count
+
+            if self._test._bytes_remaining > self._block_size:
+                # Send the whole block, reduce size as normal
+                self._test._bytes_remaining -= self._block_size
+                self._send_block()
+                self._sending_handle = self._loop.call_soon(self._try_sending)
+
+            elif self._test._bytes_remaining > 0:
+                # Sent the whole block, reduce to 0
+                self._test._bytes_remaining = 0
+                self._send_block()
+                self._sending_handle = None
+                self.done = True
+                self._test.sendable_data_depleted()
+
+            else:
+                self._sending_handle = None
+                self.done = True
+                self._test.sendable_data_depleted()
+
     def _send_block(self):
         """Send data over the test protocol"""
 
@@ -98,8 +145,6 @@ class TestStream(object):
         if self._test.data_protocol == Iperf3TestProto.UDP:
             self._pkt_tx_this_interval += 1
 
-        self._sending_handle = self._loop.call_soon(self._send_block)
-
     def _get_block(self):
         """Get data block for sending"""
 
@@ -108,7 +153,7 @@ class TestStream(object):
             data_block.extend(self._test.block_size * bytes([127]))
 
             return data_block
-        
+
         elif self._test.data_protocol == Iperf3TestProto.UDP:
             # Do some magic
             return None

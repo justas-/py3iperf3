@@ -22,9 +22,9 @@ Client specific:
                             (default 1 Mbit/sec for UDP, unlimited for TCP)
                             (optional slash and packet count for burst mode)
 (OK)  -t, --time      #         time in seconds to transmit for (default 10 secs)
-  -n, --bytes     #[KMG]    number of bytes to transmit (instead of -t)
-  -k, --blockcount #[KMG]   number of blocks (packets) to transmit (instead of -t or -n)
-  -l, --len       #[KMG]    length of buffer to read or write
+(OK)  -n, --bytes     #[KMG]    number of bytes to transmit (instead of -t)
+(OK)  -k, --blockcount #[KMG]   number of blocks (packets) to transmit (instead of -t or -n)
+(OK)  -l, --len       #[KMG]    length of buffer to read or write
                             (default 128 KB for TCP, 8 KB for UDP)
 (OK)  --cport         <port>    bind to a specific client port (TCP and UDP, default: ephemeral port)
 (OK)  -P, --parallel  #         number of parallel client streams to run

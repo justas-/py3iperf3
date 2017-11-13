@@ -5,7 +5,6 @@ import math
 import random
 import string
 import logging
-import os
 
 from py3iperf3.iperf3_api import COOKIE_SIZE
 
@@ -73,7 +72,7 @@ def exact_formatter(size_in_bits, dimmesion):
     digit_string = digit_string.rstrip('0').rstrip('.') if '.' in digit_string else digit_string
     return '{} {}'.format(digit_string, postfix)
 
-def data_size_formatter(size_in_bits, decimal = False, bytes = False, dimmension = None):
+def data_size_formatter(size_in_bits, decimal=False, in_bytes=False, dimmension=None):
     """Format size in bits to required dimmension"""
 
     if size_in_bits < 0:
@@ -92,7 +91,7 @@ def data_size_formatter(size_in_bits, decimal = False, bytes = False, dimmension
         postfix = DEC_BIT
         size_val = size_in_bits
 
-        if bytes:
+        if in_bytes:
             size_val = size_in_bits / 8
             postfix = DEC_BYTE
 
@@ -104,7 +103,7 @@ def data_size_formatter(size_in_bits, decimal = False, bytes = False, dimmension
         postfix = BIN_BIT
         size_val = size_in_bits
 
-        if bytes:
+        if in_bytes:
             size_val = size_in_bits / 8
             postfix = BIN_BYTE
 

@@ -32,7 +32,7 @@ class TestIperf3TestClass(unittest.TestCase):
 
     def test_saving_params_and_iface(self):
         """Test saving of the test parameters"""
-        
+
         fake_master = unittest.mock.MagicMock()
         fake_loop = unittest.mock.MagicMock()
         param_obj = {
@@ -53,7 +53,7 @@ class TestIperf3TestClass(unittest.TestCase):
 
     @unittest.mock.patch('py3iperf3.iperf3_test.make_cookie',
                          side_effect=fake_cookie)
-    def test_cookie_set_on_call(self, fakecookie):
+    def test_cookie_set_on_call(self, _):
         """Test setting of cookie on the first call"""
 
         fake_master = unittest.mock.MagicMock()
@@ -84,7 +84,7 @@ class TestIperf3TestClass(unittest.TestCase):
         """
 
         fake_proto = unittest.mock.MagicMock()
-        
+
         iperf_test = Iperf3Test(None, None, {})
         cookie_str = iperf_test.cookie
 
@@ -94,7 +94,7 @@ class TestIperf3TestClass(unittest.TestCase):
         fake_proto.send_data.assert_called_with(cookie_str.encode('ascii'))
 
     @unittest.mock.patch('py3iperf3.iperf3_test.TestStream')
-    def test_streams_created_destroyed(self, mock_stream):
+    def test_streams_created_destroyed(self, _):
         """Test creation of multiple streams"""
 
         num_parallel = random.randint(2, 5)

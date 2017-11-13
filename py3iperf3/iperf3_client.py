@@ -1,3 +1,6 @@
+"""
+An entry point and a shell holding iPerf tests on the client side.
+"""
 import logging
 import asyncio
 
@@ -43,7 +46,7 @@ class Iperf3Client(object):
 
     def test_done(self, test):
         """Callback on test completed"""
-        
+
         # Remove the test
         try:
             self._tests.remove(test)
@@ -51,5 +54,5 @@ class Iperf3Client(object):
             self._logger.error('Given test was not in the tests list')
 
         # If we removed the last - stop the client
-        if len(self._tests) == 0:
+        if not self._tests:
             self._loop.stop()

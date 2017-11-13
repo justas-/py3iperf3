@@ -17,6 +17,7 @@ if __name__ == '__main__':
         'log_filename':r'C:\py\test.txt',
         'format':'g',
         'parallel':3,
+        'blockcount':100,
     }
 
     setup_logging(**params)
