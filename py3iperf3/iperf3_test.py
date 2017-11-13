@@ -24,7 +24,6 @@ class Iperf3Test(object):
         self._master = master   # Ref to Client or Server
         self._loop = loop
         self._parameters = TestSettings()
-        self._set_test_parameters(test_parameters)
         self._logger = logging.getLogger('py3iperf3')
 
         self._streams = []
@@ -53,6 +52,9 @@ class Iperf3Test(object):
         self._string_drain = False
         self._string_length = None
         self._string_buffer = bytearray()
+
+        # Overwrite defaults with given params
+        self._set_test_parameters(test_parameters)
 
     @property
     def sender(self):
@@ -412,7 +414,8 @@ class Iperf3Test(object):
         #param_obj['MSS'] = 1400
         #param_obj['nodelay'] = True
         param_obj['parallel'] = self._parameters.parallel
-        #param_obj['reverse'] = True
+        if self._parameters.reverse:
+            param_obj['reverse'] = True
         #param_obj['window'] = 1
         param_obj['len'] = self._parameters.block_size
         #param_obj['bandwidth'] = 1

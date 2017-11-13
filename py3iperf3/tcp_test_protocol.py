@@ -17,7 +17,7 @@ class TcpTestProtocol(asyncio.Protocol):
         self._stream.connection_established(self)
 
     def data_received(self, data):
-        self._logger.debug('Received %s bytes', len(data))
+        #self._logger.debug('Received %s bytes', len(data))
         self._stream.data_received(data)
 
     def connection_lost(self, exc):

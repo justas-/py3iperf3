@@ -11,13 +11,14 @@ if __name__ == '__main__':
     params = {
         'server_address':'127.0.0.1',
         'server_port':5201,
-        'client_port':1337,
+        #'client_port':1337,
         'ip_version':4,
         'debug': True,
-        'log_filename':r'C:\py\test.txt',
+        #'log_filename':r'C:\py\test.txt',
         'format':'g',
         'parallel':3,
-        'blockcount':100,
+        #'blockcount':100,
+        'reverse':True,
     }
 
     setup_logging(**params)

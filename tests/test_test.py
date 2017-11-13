@@ -3,6 +3,7 @@ Unit-test for Iperf3Test class
 """
 #pylint: disable=protected-access, no-member
 
+import json
 import random
 import struct
 import unittest
@@ -50,6 +51,7 @@ class TestIperf3TestClass(unittest.TestCase):
         self.assertEqual(iperf_test.server_port, 1337)
         self.assertEqual(iperf_test.data_protocol, Iperf3TestProto.UDP)
         self.assertEqual(iperf_test.block_size, 31337)
+        self.assertEqual(iperf_test.role, 'c')
 
     @unittest.mock.patch('py3iperf3.iperf3_test.make_cookie',
                          side_effect=fake_cookie)
@@ -131,3 +133,66 @@ class TestIperf3TestClass(unittest.TestCase):
         }
         iperf_test = Iperf3Test(None, None, test_params)
         self.assertTrue(iperf_test.block_size, 31337)
+
+    def test_test_stoppers(self):
+        """Test setting of test stopper"""
+
+        # Time
+        params = {}
+        iperf_test_t = Iperf3Test(None, None, params)
+        self.assertEqual(iperf_test_t.test_type, 't')
+
+        # Blocks
+        params = {'blockcount':1337}
+        iperf_test_b = Iperf3Test(None, None, params)
+        self.assertEqual(iperf_test_b.test_type, 'b')
+
+        # Size
+        params = {'bytes':31337}
+        iperf_test_s = Iperf3Test(None, None, params)
+        self.assertEqual(iperf_test_s.test_type, 's')
+
+    def test_exchange_resutls(self):
+        """Test sending and receiving results"""
+
+        mock_control = unittest.mock.MagicMock()
+        iperf_test = Iperf3Test(None, None, {})
+        iperf_test._control_protocol = mock_control
+        iperf_test.handle_server_message(struct.pack(
+            '!c', bytes([Iperf3State.EXCHANGE_RESULTS.value])))
+        
+        self.assertTrue(iperf_test._string_drain)
+        assert mock_control.send_data.called
+
+    def test_client_cleanup(self):
+        """Test cleaning up of the test"""
+        mock_control = unittest.mock.MagicMock()
+        mock_master = unittest.mock.MagicMock()
+
+        iperf_test = Iperf3Test(mock_master, None, {})
+        iperf_test._control_protocol = mock_control
+
+        iperf_test.handle_server_message(struct.pack(
+            '!c', bytes([Iperf3State.DISPLAY_RESULTS.value])))
+
+        self.assertEqual(iperf_test._state, Iperf3State.IPERF_DONE)
+        assert mock_control.send_data.called
+        assert mock_control.close_connection.called
+        assert mock_master.test_done.called_with(iperf_test)
+
+    def test_sting_drain(self):
+        """Test draining the string"""
+
+        test_obj = {'foo':'bar', 'baz':2, 'key':False}
+        json_str = json.dumps(test_obj)
+
+        iperf_test = Iperf3Test(None, None, {})
+        iperf_test._string_drain = True
+
+        iperf_test.handle_server_message(struct.pack(
+            '!I', len(json_str)))
+        for single_char in json_str:
+            iperf_test.handle_server_message(
+                single_char.encode('ascii'))
+
+        self.assertEqual(iperf_test.remote_results, test_obj)
