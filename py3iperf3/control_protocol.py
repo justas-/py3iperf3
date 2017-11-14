@@ -46,10 +46,3 @@ class ControlProtocol(asyncio.Protocol):
         self._logger.debug('Closing connection to the server')
         self._is_closed = True
         self._transport.close()
-
-    def get_tcp_mss(self):
-        """Get the control socket TCP MSS"""
-
-        # TODO: Win32/Linux compat
-        control_socket = self._transport.get_extra_info('socket')
-        return control_socket.getsockopt(socket.SOL_SOCKET, socket.TCP_MAXSEG)
