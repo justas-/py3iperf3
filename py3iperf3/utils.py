@@ -77,7 +77,7 @@ def data_size_formatter(size_in_bits, decimal=False, in_bytes=False, dimmension=
 
     if size_in_bits < 0:
         # Error?
-        return data_size_formatter(-size_in_bits)
+        return data_size_formatter(-size_in_bits, decimal, in_bytes)
 
     if size_in_bits == 0:
         return '0 bit'
