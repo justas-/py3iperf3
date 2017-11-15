@@ -57,6 +57,11 @@ class Iperf3Test(object):
         self._set_test_parameters(test_parameters)
 
     @property
+    def role(self):
+        """Get test role"""
+        return self._role
+
+    @property
     def sender(self):
         return not self._parameters.reverse
 
@@ -96,6 +101,11 @@ class Iperf3Test(object):
     def test_type(self):
         # What stops the test (time/tx blocks/tx data)
         return self._test_stopper
+
+    @property
+    def file(self):
+        """Get the read/write file"""
+        return self._parameters.file
 
     def run(self):
         """Start the test"""
@@ -395,10 +405,14 @@ class Iperf3Test(object):
     def _create_streams(self):
         """Create test streams"""
 
-        for _ in range(self._parameters.parallel):
-            test_stream = TestStream(loop=self._loop, test=self)
-            test_stream.create_connection()
-            self._streams.append(test_stream)
+        try:
+            for _ in range(self._parameters.parallel):
+                test_stream = TestStream(loop=self._loop, test=self)
+                test_stream.create_connection()
+                self._streams.append(test_stream)
+        except OSError as exc:
+            self._logger.exception('Failed creating stream!', exc_info=exc)
+            raise IPerf3Exception('Failed to create test stream!')
 
     def _exchange_parameters(self):
         """Send test parameters to the server"""

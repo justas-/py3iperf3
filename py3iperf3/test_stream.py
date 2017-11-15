@@ -1,11 +1,13 @@
 """
 A class representing a single data stream in iPerf3 test.
 """
+import random
 import logging
 import time
 
 from py3iperf3.tcp_test_protocol import TcpTestProtocol
 from py3iperf3.iperf3_api import Iperf3TestProto
+from py3iperf3.error import IPerf3Exception
 
 class TestStream(object):
     """A single test data stream"""
@@ -31,6 +33,24 @@ class TestStream(object):
         self._blocks_tx_this_interval = 0
         self._pkt_tx_this_interval = 0
         self._pkt_rx_this_interval = 0
+
+        self._data_source_sink = None # Either byte array or file handle
+
+        # Will this stream send data?
+        if ((self._test.role == 'c' and self._test.sender) or
+            (self._test.role == 's' and not self._test.sender)):
+
+            if self._test.file is None:
+                self._data_source_sink = bytearray(
+                    random.getrandbits(8) for _ in range(self._block_size))
+            else:
+                self._data_source_sink = open(
+                    self._test.file, 'rb')
+        else:
+            # This stream will receive data
+            if self._test.file is not None:
+                self._data_source_sink = open(
+                    self._test.file, 'rb+')
 
     def get_stream_interval_stats(self):
         """Get (and reset) interval stats"""
@@ -90,6 +110,14 @@ class TestStream(object):
         if self._test.data_protocol == Iperf3TestProto.UDP:
             self._pkt_rx_this_interval += 1
 
+        if self._test.file:
+            try:
+                self._data_source_sink.write(data)
+            except OSError as exc:
+                logging.exception('Failed to write received data to file',
+                                  exc_info=exc)
+                raise IPerf3Exception('Failed to write RX data to file')
+
     def _try_sending(self):
         """Check the gating and send if possible"""
 
@@ -140,7 +168,7 @@ class TestStream(object):
         self._test_protocol.send_data(data_block)
 
         self._blocks_tx_this_interval += 1
-        self._bytes_tx_this_interval += self._test.block_size
+        self._bytes_tx_this_interval += len(data_block)
 
         if self._test.data_protocol == Iperf3TestProto.UDP:
             self._pkt_tx_this_interval += 1
@@ -149,10 +177,20 @@ class TestStream(object):
         """Get data block for sending"""
 
         if self._test.data_protocol == Iperf3TestProto.TCP:
-            data_block = bytearray()
-            data_block.extend(self._test.block_size * bytes([127]))
+            # What is data_source_sink
+            if self._test.file:
+                bytes_data = self._data_source_sink.read(
+                    self._block_size)
 
-            return data_block
+                # Empty bytes() == file EOF
+                if bytes_data is bytes():
+                    self.done = True
+                    self._test.sendable_data_depleted()
+
+                return bytes_data
+            else:
+                # Random bytearray
+                return self._data_source_sink
 
         elif self._test.data_protocol == Iperf3TestProto.UDP:
             # Do some magic
@@ -176,5 +214,9 @@ class TestStream(object):
         if self._sending_handle is not None:
             self._sending_handle.cancel()
             self._sending_handle = None
+
+        # Close file handle if file is used
+        if self._test.file:
+            close(self._data_source_sink)
 
         self.done = True

@@ -24,3 +24,4 @@ class TestSettings(object):
     format = None
     blockcount = None
     bytes = None
+    file = None

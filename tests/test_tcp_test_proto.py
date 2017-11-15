@@ -2,6 +2,7 @@
 Unit-test for the TCP data protocol.
 """
 import unittest
+import unittest.mock
 
 from py3iperf3.tcp_test_protocol import TcpTestProtocol
 

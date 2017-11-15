@@ -2,6 +2,7 @@
 Unit-test for util functions
 """
 import unittest
+import unittest.mock
 
 from py3iperf3.iperf3_api import COOKIE_SIZE
 from py3iperf3.utils import make_cookie, data_size_formatter, setup_logging

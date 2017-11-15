@@ -2,6 +2,7 @@
 Unit-test for control protocol between the client and server.
 """
 import unittest
+import unittest.mock
 
 from py3iperf3.control_protocol import ControlProtocol
 
