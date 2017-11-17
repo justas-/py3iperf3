@@ -69,3 +69,15 @@ class TestControlProtocol(unittest.TestCase):
 
         self.assertTrue(control_proto._is_closed)
         assert mock_transport.close.called
+
+    @unittest.mock.patch('py3iperf3.utils.logging.getLogger',
+                         side_effec=unittest.mock.MagicMock)
+    def test_control_connection_lost(self, mock_logger):
+        """Test complaining when connection is lost"""
+        
+        mock_test = unittest.mock.MagicMock()
+
+        control_proto = ControlProtocol(mock_test)
+        control_proto.connection_lost(None)
+
+        assert control_proto._logger.debug.called

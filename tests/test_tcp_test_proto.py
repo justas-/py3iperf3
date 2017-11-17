@@ -6,6 +6,10 @@ import unittest.mock
 
 from py3iperf3.tcp_test_protocol import TcpTestProtocol
 
+def fake_logger(message, **kwargs):
+    """Mockup of logger"""
+    return unittest.mock.MagicMock()
+
 class TestTcpTestProtocol(unittest.TestCase):
     """Unit-test of TCP data proto"""
 
@@ -56,3 +60,15 @@ class TestTcpTestProtocol(unittest.TestCase):
         tcp_proto.send_data(message)
 
         assert mock_transport.write.called_with(message)
+
+    @unittest.mock.patch('py3iperf3.utils.logging.getLogger',
+                         side_effec=fake_logger)
+    def test_tcp_data_connection_lost(self, fake_logger):
+        """Test logging of connection lost event"""
+
+        mock_stream = unittest.mock.MagicMock()
+        tcp_proto = TcpTestProtocol(mock_stream)
+
+        tcp_proto.connection_lost(None)
+
+        assert tcp_proto._logger.debug.called

@@ -42,6 +42,7 @@ class TestIperf3TestClass(unittest.TestCase):
             'server_port':1337,
             'test_protocol':Iperf3TestProto.UDP,
             'block_size':31337,
+            'file':'foobar.bin',
         }
 
         iperf_test = Iperf3Test(fake_master, fake_loop, param_obj)
@@ -52,6 +53,7 @@ class TestIperf3TestClass(unittest.TestCase):
         self.assertEqual(iperf_test.data_protocol, Iperf3TestProto.UDP)
         self.assertEqual(iperf_test.block_size, 31337)
         self.assertEqual(iperf_test.role, 'c')
+        self.assertEqual(iperf_test.file, 'foobar.bin')
 
     @unittest.mock.patch('py3iperf3.iperf3_test.make_cookie',
                          side_effect=fake_cookie)
@@ -196,3 +198,22 @@ class TestIperf3TestClass(unittest.TestCase):
                 single_char.encode('ascii'))
 
         self.assertEqual(iperf_test.remote_results, test_obj)
+
+    def test_sendable_depleted(self):
+        """Test handling of data_depleted call"""
+
+        mock_stream1 = unittest.mock.MagicMock()
+        mock_stream2 = unittest.mock.MagicMock()
+        mock_proto = unittest.mock.MagicMock()
+
+        iperf_test = Iperf3Test(None, None, {})
+        iperf_test._control_protocol = mock_proto
+
+        iperf_test._streams.extend([mock_stream1, mock_stream2])
+
+        # Two calls, second should be NOP
+        iperf_test.sendable_data_depleted()
+        iperf_test.sendable_data_depleted()
+
+        for stream in iperf_test._streams:
+            stream.stop_stream.assert_called_once_with()
