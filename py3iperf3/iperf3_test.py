@@ -261,8 +261,12 @@ class Iperf3Test(object):
             speed_str = data_size_formatter(
                 int(sum_stats['bits_per_second']), None, None, self._parameters.format)
 
-        self._logger.info('From: {:.2f} To: {:.2f} Speed: {}/sec'.format(
-            scratch_start, scratch_end, speed_str))
+        if self.data_protocol == Iperf3TestProto.TCP:
+            self._logger.info('From: {:.2f} To: {:.2f} Speed: {}/sec'.format(
+                scratch_start, scratch_end, speed_str))
+        elif self.data_protocol == Iperf3TestProto.UDP:
+            self._logger.info('From: {:.2f} To: {:.2f} Speed: {}/sec {:.4f} ms {}/{} ({}%)'.format(
+                scratch_start, scratch_end, speed_str, self._streams[0]._jitter * 1000, 0, 0, 0))
 
         self._hdl_stats = self._loop.call_later(
             self._parameters.report_interval,

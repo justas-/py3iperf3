@@ -24,6 +24,9 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="iperf.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="py3iperf3\base_test_stream.py">
       <SubType>Code</SubType>
     </Compile>

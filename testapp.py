@@ -22,6 +22,7 @@ if __name__ == '__main__':
         #'blockcount':10,
         'reverse':False,
         'test_protocol': Iperf3TestProto.UDP,
+        'reverse':True
     }
 
     setup_logging(**params)
