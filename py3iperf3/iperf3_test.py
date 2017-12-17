@@ -12,7 +12,8 @@ from py3iperf3.control_protocol import ControlProtocol
 from py3iperf3.utils import make_cookie, data_size_formatter
 from py3iperf3.iperf3_api import Iperf3State, Iperf3TestProto
 from py3iperf3.iperf3_api import DEFAULT_BLOCK_TCP, DEFAULT_BLOCK_UDP
-from py3iperf3.test_stream import TestStream
+from py3iperf3.test_stream_tcp import TestStreamTcp
+from py3iperf3.test_stream_udp import TestStreamUdp
 from py3iperf3.error import IPerf3Exception
 from py3iperf3.test_settings import TestSettings
 
@@ -407,7 +408,12 @@ class Iperf3Test(object):
 
         try:
             for _ in range(self._parameters.parallel):
-                test_stream = TestStream(loop=self._loop, test=self)
+                if self.data_protocol == Iperf3TestProto.TCP:
+                    test_stream = TestStreamTcp(loop=self._loop, test=self)
+                elif self.data_protocol == Iperf3TestProto.UDP:
+                    test_stream = TestStreamUdp(loop=self._loop, test=self)
+                else:
+                    raise IPerf3Exception('The required data protocol is not implemented (yet)')
                 test_stream.create_connection()
                 self._streams.append(test_stream)
         except OSError as exc:
@@ -418,7 +424,11 @@ class Iperf3Test(object):
         """Send test parameters to the server"""
 
         param_obj = {}
-        param_obj['tcp'] = True
+
+        if self.data_protocol == Iperf3TestProto.TCP:
+            param_obj['tcp'] = True
+        elif self.data_protocol == Iperf3TestProto.UDP:
+            param_obj['udp'] = True
         param_obj['omit'] = 0
         param_obj['time'] = self._parameters.test_duration
         if self._parameters.bytes:

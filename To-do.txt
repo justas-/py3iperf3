@@ -39,7 +39,7 @@ Client specific:
   -O, --omit N              omit the first n seconds
   -T, --title str           prefix every output line with this string
   --get-server-output       get results from server
-  --udp-counters-64bit      use 64-bit counters in UDP test packets
+(OK)  --udp-counters-64bit      use 64-bit counters in UDP test packets
 
 [KMG] indicates options that support a K/M/G suffix for kilo-, mega-, or giga-
 

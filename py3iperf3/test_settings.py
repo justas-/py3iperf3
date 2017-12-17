@@ -25,3 +25,4 @@ class TestSettings(object):
     blockcount = None
     bytes = None
     file = None
+    udp64bitcounters = False

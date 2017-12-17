@@ -3,6 +3,7 @@ import asyncio
 import os
 
 from py3iperf3.iperf3_client import Iperf3Client
+from py3iperf3.iperf3_api import Iperf3TestProto
 from py3iperf3.utils import setup_logging
 
 if __name__ == '__main__':
@@ -13,12 +14,14 @@ if __name__ == '__main__':
         'server_port':5201,
         #'client_port':1337,
         'ip_version':4,
+        'test_duration':10,
         'debug': True,
         #'log_filename':r'C:\py\test.txt',
         'format':'g',
-        'parallel':3,
-        #'blockcount':100,
-        'reverse':True,
+        'parallel':1,
+        #'blockcount':10,
+        'reverse':False,
+        'test_protocol': Iperf3TestProto.UDP,
     }
 
     setup_logging(**params)

@@ -24,6 +24,9 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="py3iperf3\base_test_stream.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="py3iperf3\control_protocol.py">
       <SubType>Code</SubType>
     </Compile>
@@ -48,7 +51,13 @@
     <Compile Include="py3iperf3\test_settings.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="py3iperf3\test_stream.py">
+    <Compile Include="py3iperf3\test_stream_tcp.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="py3iperf3\test_stream_udp.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="py3iperf3\udp_test_protocol.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="py3iperf3\utils.py">
