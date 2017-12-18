@@ -97,13 +97,39 @@ class TestIperf3TestClass(unittest.TestCase):
         self.assertIs(iperf_test._control_protocol, fake_proto)
         fake_proto.send_data.assert_called_with(cookie_str.encode('ascii'))
 
-    @unittest.mock.patch('py3iperf3.iperf3_test.TestStream')
-    def test_streams_created_destroyed(self, _):
+    @unittest.mock.patch('py3iperf3.iperf3_test.TestStreamTcp')
+    def test_streams_tcp_created_destroyed(self, _):
         """Test creation of multiple streams"""
 
         num_parallel = random.randint(2, 5)
         test_params = {
             'parallel':num_parallel
+        }
+        mock_proto = unittest.mock.MagicMock()
+
+        iperf_test = Iperf3Test(None, None, test_params)
+        iperf_test._control_protocol = mock_proto
+        iperf_test.handle_server_message(struct.pack(
+            '!c', bytes([Iperf3State.CREATE_STREAMS.value])))
+
+        # Ensure streams created and connect attempted
+        self.assertEqual(len(iperf_test._streams), num_parallel)
+        for test_stream in iperf_test._streams:
+            assert test_stream.create_connection.called
+
+        # Ensure streams are stopped
+        iperf_test._stop_all_streams()
+        for test_stream in iperf_test._streams:
+            assert test_stream.stop_stream.called
+    
+    @unittest.mock.patch('py3iperf3.iperf3_test.TestStreamUdp')
+    def test_streams_udp_created_destroyed(self, _):
+        """Test creation of multiple streams"""
+
+        num_parallel = random.randint(2, 5)
+        test_params = {
+            'parallel':num_parallel,
+            'test_protocol': Iperf3TestProto.UDP,
         }
         mock_proto = unittest.mock.MagicMock()
 

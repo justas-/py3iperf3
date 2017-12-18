@@ -18,11 +18,11 @@ if __name__ == '__main__':
         'debug': True,
         #'log_filename':r'C:\py\test.txt',
         'format':'g',
-        'parallel':1,
+        'parallel':3,
         #'blockcount':10,
-        'reverse':False,
-        'test_protocol': Iperf3TestProto.UDP,
-        'reverse':True
+        'reverse':True,
+        'test_protocol': Iperf3TestProto.TCP,
+        'window':16000
     }
 
     setup_logging(**params)

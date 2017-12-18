@@ -108,6 +108,16 @@ class Iperf3Test(object):
         """Get the read/write file"""
         return self._parameters.file
 
+    @property
+    def no_delay(self):
+        """Get NoDelay property"""
+        return self._parameters.no_delay
+
+    @property
+    def window(self):
+        """Get Window property"""
+        return self._parameters.window
+
     def run(self):
         """Start the test"""
         self._connect_to_server()
@@ -226,47 +236,16 @@ class Iperf3Test(object):
 
         self._last_stat_collect_time = t_now
 
-        for stream in self._streams:
-            stream_stats = stream.get_stream_interval_stats()
-            stream_stats['start'] = scratch_start
-            stream_stats['end'] = scratch_end
-            stream_stats['seconds'] = scratch_seconds
-            stream_stats['bits_per_second'] = stream_stats['bytes'] * 8 / stream_stats['seconds']
-
-            all_stream_stats.append(stream_stats)
-
-        sum_stats = {
-            "start":            scratch_start,
-			"end":	            scratch_end,
-			"seconds":	        scratch_seconds,
-			"bytes":	        sum([x['bytes'] for x in all_stream_stats]),
-			"bits_per_second":  sum([x['bits_per_second'] for x in all_stream_stats]),
-			"retransmits":	    sum([x['retransmits'] for x in all_stream_stats]),
-			"omitted":	        False
-        }
-
-        stat_ob = {
-            "streams" : all_stream_stats,
-            "sum" : sum_stats
-        }
-
-        self._interval_stats.append(stat_ob)
-
-        if self._parameters.format is None:
-            # Autosizing
-            speed_str = data_size_formatter(
-                int(sum_stats['bits_per_second']), True, False)
+        # Collect and print individual stats
+        # Check if we need sum stats
+        if len(self._streams) > 1:
+            all_stats = []
+            for stream in self._streams:
+                all_stats.append(stream.save_stats(scratch_start, scratch_end, scratch_seconds))
+                stream.print_last_stats_entry()
+            self._streams[0].print_sum_stats(all_stats)
         else:
-            # Use specific format
-            speed_str = data_size_formatter(
-                int(sum_stats['bits_per_second']), None, None, self._parameters.format)
-
-        if self.data_protocol == Iperf3TestProto.TCP:
-            self._logger.info('From: {:.2f} To: {:.2f} Speed: {}/sec'.format(
-                scratch_start, scratch_end, speed_str))
-        elif self.data_protocol == Iperf3TestProto.UDP:
-            self._logger.info('From: {:.2f} To: {:.2f} Speed: {}/sec {:.4f} ms {}/{} ({}%)'.format(
-                scratch_start, scratch_end, speed_str, self._streams[0]._jitter * 1000, 0, 0, 0))
+            stream.save_stats(scratch_start, scratch_end, scratch_seconds)
 
         self._hdl_stats = self._loop.call_later(
             self._parameters.report_interval,
@@ -440,11 +419,13 @@ class Iperf3Test(object):
         if self._parameters.blockcount:
             param_obj['blockcount'] = self._parameters.blockcount
         #param_obj['MSS'] = 1400
-        #param_obj['nodelay'] = True
+        if self._parameters.no_delay:
+            param_obj['nodelay'] = True
         param_obj['parallel'] = self._parameters.parallel
         if self._parameters.reverse:
             param_obj['reverse'] = True
-        #param_obj['window'] = 1
+        if self._parameters.window:
+            param_obj['window'] = self._parameters.window
         param_obj['len'] = self._parameters.block_size
         #param_obj['bandwidth'] = 1
         #param_obj['fqrate'] = 1
@@ -456,8 +437,10 @@ class Iperf3Test(object):
             param_obj['title'] = self._parameters.title
         #param_obj['congestion'] = ''
         #param_obj['congestion_used'] = ''
-        #param_obj['get_server_output'] = 1
-        #param_obj['udp_counters_64bit'] = 1
+        if self._parameters.get_server_output:
+            param_obj['get_server_output'] = 1
+        if self._parameters.udp64bitcounters:
+            param_obj['udp_counters_64bit'] = 1
         #param_obj['authtoken'] = ''
         param_obj['client_version'] = 'py3iPerf3_v0.9'
 

@@ -26,3 +26,5 @@ class TestSettings(object):
     bytes = None
     file = None
     udp64bitcounters = False
+    get_server_output = False
+    window = None

@@ -27,6 +27,7 @@ class BaseTestStream(object):
         self._block_size = self._test.block_size
         self._stop_on = self._test.test_type
 
+        self._stat_objs = []
         self._bytes_tx_this_interval = 0
         self._bytes_rx_this_interval = 0
         self._blocks_tx_this_interval = 0
@@ -51,35 +52,19 @@ class BaseTestStream(object):
                 self._data_source_sink = open(
                     self._test.file, 'rb+')
 
-    def get_stream_interval_stats(self):
-        """Get (and reset) interval stats"""
+    def save_stats(self, t_start, t_end, t_sec):
+        """Save interval stats to the stats object &
+           return an opaque stats obj to the caller.
+        """
+        pass
+        
+    def print_last_stats_entry(self):
+        """Print the last entry in the stats storage"""
+        pass
 
-        # TODO: Change for TCP/UDP
-
-        if self._test.sender:
-            num_bytes = self._bytes_tx_this_interval
-        else:
-            num_bytes = self._bytes_rx_this_interval
-
-        stats = {
-		    "socket":	        1,
-			"start":	        None,
-			"end":	            None,
-			"seconds":	        None,
-			"bytes":	        num_bytes,
-			"bits_per_second":	None,
-			"retransmits":	    0,
-			"snd_cwnd":	        0,
-			"omitted":	        False
-        }
-
-        self._bytes_rx_this_interval = 0
-        self._bytes_tx_this_interval = 0
-        self._blocks_tx_this_interval = 0
-        self._pkt_tx_this_interval = 0
-        self._pkt_rx_this_interval = 0
-
-        return stats
+    def print_sum_stats(stat_list):
+        """Given a list of stats objects print a sum"""
+        pass
 
     def create_connection(self):
         pass
