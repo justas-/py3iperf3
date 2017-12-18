@@ -1,6 +1,7 @@
 """
 A class representing a single data stream in iPerf3 test.
 """
+import socket
 
 from py3iperf3.base_test_stream import BaseTestStream
 from py3iperf3.tcp_test_protocol import TcpTestProtocol
@@ -35,14 +36,25 @@ class TestStreamTcp(BaseTestStream):
     def create_connection(self):
         """Create protocol connection to the server"""
 
+        if self._test.ip_version == 4:
+            ip_family = socket.AF_INET
+        else:
+            ip_family = socket.AF_INET6
+
+        self._logger.debug('Making outgoing data connection to %s:%s IPver: %s',
+                    self._test.server_address,
+                    self._test.server_port,
+                    ip_family)
+
         try:
             connect_coro = self._loop.create_connection(
                 lambda: TcpTestProtocol(
                     test_stream=self,
                     no_delay=self._test.no_delay,
                     window=self._test.window),
-                self._test.server_address,
-                self._test.server_port)
+                host=self._test.server_address,
+                port=self._test.server_port,
+                family=ip_family)
             self._loop.create_task(connect_coro)
         except Exception as exc:
             self._logger.exception('Exception connecting to the server!', exc_info=exc)
@@ -54,7 +66,7 @@ class TestStreamTcp(BaseTestStream):
         self._test_protocol.send_data(
             self._test.cookie.encode('ascii'))
 
-        self._logger.info('Stream: Sent cookie')
+        self._logger.debug('Stream: Sent cookie')
 
     def save_stats(self, t_start, t_end, t_sec):
         """ """

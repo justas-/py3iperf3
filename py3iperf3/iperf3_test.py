@@ -118,6 +118,11 @@ class Iperf3Test(object):
         """Get Window property"""
         return self._parameters.window
 
+    @property
+    def ip_version(self):
+        """Get IP version"""
+        return self._parameters.ip_version
+
     def run(self):
         """Start the test"""
         self._connect_to_server()
@@ -245,7 +250,8 @@ class Iperf3Test(object):
                 stream.print_last_stats_entry()
             self._streams[0].print_sum_stats(all_stats)
         else:
-            stream.save_stats(scratch_start, scratch_end, scratch_seconds)
+            self._streams[0].save_stats(scratch_start, scratch_end, scratch_seconds)
+            self._streams[0].print_last_stats_entry()
 
         self._hdl_stats = self._loop.call_later(
             self._parameters.report_interval,
@@ -362,7 +368,9 @@ class Iperf3Test(object):
         """Set test parameters"""
 
         for attr, value in test_parameters.items():
-            setattr(self._parameters, attr, value)
+            # Set default if Not given
+            if value is not None:
+                setattr(self._parameters, attr, value)
 
         if self._parameters.block_size is None:
             if self._parameters.test_protocol == Iperf3TestProto.TCP:

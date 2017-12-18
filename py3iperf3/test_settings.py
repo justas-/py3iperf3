@@ -9,12 +9,12 @@ class TestSettings(object):
 
     test_protocol = Iperf3TestProto.TCP
     server_address = ''
-    server_port = 0
+    server_port = 5201
 
     client_address = None
     client_port = None
     block_size = None
-    ip_version = None
+    ip_version = 4
     test_duration = 10
     report_interval = 1
     no_delay = False
@@ -28,3 +28,8 @@ class TestSettings(object):
     udp64bitcounters = False
     get_server_output = False
     window = None
+
+    # The following attributes are ignored
+    log_filename = None
+    debug = None
+

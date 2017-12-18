@@ -5,6 +5,7 @@ A Python native iPerf3 client.
 import asyncio
 import argparse
 import logging
+import os
 
 from py3iperf3.utils import setup_logging
 from py3iperf3.iperf3_client import Iperf3Client
@@ -14,6 +15,7 @@ def run_client(params):
     """Runt the client"""
 
     loop = asyncio.get_event_loop()
+    params = vars(params)
 
     setup_logging(**params)
 

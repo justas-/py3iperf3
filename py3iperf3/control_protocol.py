@@ -33,7 +33,7 @@ class ControlProtocol(asyncio.Protocol):
 
     def data_received(self, data):
         """Data received callback"""
-        self._logger.info('Control connection data received. Len: %s bytes', len(data))
+        self._logger.debug('Control connection data received. Len: %s bytes', len(data))
         self._logger.debug('RX data: %s', binascii.hexlify(data))
         self._test.handle_server_message(data)
 
