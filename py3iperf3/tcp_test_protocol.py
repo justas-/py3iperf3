@@ -21,11 +21,15 @@ class TcpTestProtocol(asyncio.Protocol):
     def connection_made(self, transport):
         self._transport = transport
         peer_data = transport.get_extra_info('peername')
-        self._logger.debug('TCP Test connection made! Peer: %s', peer_data)
 
         # Extract socket ID
         this_socket = transport.get_extra_info('socket')
         self._sock_id = this_socket.fileno()
+        local_data = this_socket.getsockname()
+
+        self._logger.info('[%s] local %s port %s connected to %s port %s',
+                          self._sock_id, local_data[0], local_data[1],
+                          peer_data[0], peer_data[1])
 
         # No delay OFF -> Nagle's alg used
         this_socket.setsockopt(

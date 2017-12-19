@@ -196,7 +196,7 @@ class Iperf3Test(object):
                     self._collect_print_stats)
 
             elif self._state == Iperf3State.TEST_RUNNING:
-                self._logger.info('Test is running!')
+                self._logger.info('[ ID] Interval           Transfer     Bandwidth')
             elif self._state == Iperf3State.EXCHANGE_RESULTS:
                 self._send_results()
                 self._string_drain = True # Expect string reply from the server
