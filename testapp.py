@@ -20,7 +20,7 @@ if __name__ == '__main__':
         'format':'g',
         'parallel':3,
         #'blockcount':10,
-        'reverse':True,
+        'reverse':False,
         'test_protocol': Iperf3TestProto.TCP,
         'window':16000
     }

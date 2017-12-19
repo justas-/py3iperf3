@@ -29,6 +29,7 @@ class Iperf3Test(object):
 
         self._streams = []
         self._interval_stats = []
+        self._next_stream_id = 1
 
         # Event handles
         self._hdl_stop_test = None
@@ -48,6 +49,7 @@ class Iperf3Test(object):
 
         self._last_stat_collect_time = None
         self._stream_start_time = None
+        self._stream_stop_time = None
 
         # Length prefixed strings reception
         self._string_drain = False
@@ -129,7 +131,7 @@ class Iperf3Test(object):
 
     def stop(self):
         """Stop the test"""
-        pass
+        self._client_cleanup()
 
     def server_connection_established(self, control_protocol):
         """Callback on established server connection"""
@@ -202,7 +204,7 @@ class Iperf3Test(object):
                 self._string_drain = True # Expect string reply from the server
 
             elif self._state == Iperf3State.DISPLAY_RESULTS:
-                self._logger.info('Received results: %s', self.remote_results)
+                self.display_results()
                 self._client_cleanup()
             elif self._state == Iperf3State.IPERF_DONE:
                 pass
@@ -214,6 +216,74 @@ class Iperf3Test(object):
                 pass
             else:
                 self._logger.debug('Unknown state ID received')
+
+    def display_results(self):
+        """Display results after the test"""
+        self._logger.debug('Received results: %s', self.remote_results)
+        self._logger.info('- - - - - - - - - - - - - - - - - - - - - - - - -')
+        self._logger.info('[ ID] Interval           Transfer     Bandwidth')
+
+        local_stats_list = []
+        remote_stats_list = []
+
+        # Get starts from us and remote
+        for stream in self._streams:
+            our_stats = stream.get_final_stats()
+            remote_stats = None
+
+            # Filter required stream
+            for stat_ob in self.remote_results['streams']:
+                if stat_ob['id'] == our_stats['id']:
+                    remote_stats = stat_ob
+
+            # TODO: Use each streams time length
+            test_len = self._stream_stop_time - self._stream_start_time
+
+            # Format our numbers
+            our_data_str = data_size_formatter(
+                our_stats['bytes'], None, None, 'm')
+            our_speed_str = data_size_formatter(
+                int(our_stats['bytes'] * 8 / test_len), None, None, 'm')
+
+            # Format remote numbers
+            remote_data_str = data_size_formatter(
+                remote_stats['bytes'], None, None, 'm')
+            remote_speed_str = data_size_formatter(
+                int(remote_stats['bytes'] * 8 / test_len), None, None, 'm')
+
+            # Print entry
+            self._logger.info('[{}] 0.00-{:.2f} sec {} {}/sec   local'.format(
+                stream.socket_id, test_len, our_data_str, our_speed_str))
+            self._logger.info('[{}] 0.00-{:.2f} sec {} {}/sec   remote'.format(
+                stream.socket_id, test_len, remote_data_str, remote_speed_str))
+
+            # Add for later usage (if num stream > 1)
+            local_stats_list.append(our_stats)
+            remote_stats_list.append(remote_stats)
+
+        # Calculate sum stats if required
+        if len(self._streams) > 1:
+            test_len = self._stream_stop_time - self._stream_start_time
+            sum_local = sum([x['bytes'] for x in local_stats_list])
+            sum_remote = sum([x['bytes'] for x in remote_stats_list])
+
+            # Format our numbers
+            our_data_str = data_size_formatter(
+                sum_local, None, None, 'm')
+            our_speed_str = data_size_formatter(
+                int(sum_local * 8 / test_len), None, None, 'm')
+
+            # Format remote numbers
+            remote_data_str = data_size_formatter(
+                sum_remote, None, None, 'm')
+            remote_speed_str = data_size_formatter(
+                int(sum_remote * 8 / test_len), None, None, 'm')
+
+            # Print entry
+            self._logger.info('[SUM] 0.00-{:.2f} sec {} {}/sec   local'.format(
+                test_len, our_data_str, our_speed_str))
+            self._logger.info('[SUM] 0.00-{:.2f} sec {} {}/sec   remote'.format(
+                test_len, remote_data_str, remote_speed_str))
 
     def sendable_data_depleted(self):
         """Called when blockcount is set and no more blocks remain"""
@@ -258,7 +328,10 @@ class Iperf3Test(object):
             self._collect_print_stats)
 
     def _client_cleanup(self):
+
         # close all streams
+        for stream in self._streams:
+            stream.stop_stream()
 
         # Graceful bye-bye to the server
         self._set_and_send_state(Iperf3State.IPERF_DONE)
@@ -321,23 +394,13 @@ class Iperf3Test(object):
         results_obj["cpu_util_user"] = 0
         results_obj["cpu_util_system"] = 0
 
-        results_obj["sender_has_retransmits"] = 0
+        results_obj["sender_has_retransmits"] = -1
         results_obj["congestion_used"] = "Unknown"
         results_obj["streams"] = []
 
         for stream in self._streams:
-            stream_stat_obj = {}
-
-            stream_stat_obj["id"] = 1
-            stream_stat_obj["bytes"] = 1
-            stream_stat_obj["retransmits"] = 1
-            stream_stat_obj["jitter"] = 1
-            stream_stat_obj["errors"] = 1
-            stream_stat_obj["packets"] = 1
-            stream_stat_obj["start_time"] = 1
-            stream_stat_obj["end_time"] = 1
-
-            results_obj["streams"].append(stream_stat_obj)
+            results_obj["streams"].append(
+                stream.get_final_stats())
 
         json_string = json.dumps(results_obj)
         self._logger.debug('Client stats JSON string: %s', json_string)
@@ -350,8 +413,16 @@ class Iperf3Test(object):
 
         self._logger.debug('Stopping all streams!')
 
+        self._stream_stop_time = time.time()
+
+        # Stop streams
         for stream in self._streams:
             stream.stop_stream()
+
+        # Stop proress reporting
+        if self._hdl_stats is not None:
+            self._hdl_stats.cancel()
+            self._hdl_stats = None
 
         self._set_and_send_state(Iperf3State.TEST_END)
 
@@ -400,11 +471,18 @@ class Iperf3Test(object):
         try:
             for _ in range(self._parameters.parallel):
                 if self.data_protocol == Iperf3TestProto.TCP:
-                    test_stream = TestStreamTcp(loop=self._loop, test=self)
+                    test_stream = TestStreamTcp(loop=self._loop, test=self, stream_id=self._next_stream_id)
                 elif self.data_protocol == Iperf3TestProto.UDP:
-                    test_stream = TestStreamUdp(loop=self._loop, test=self)
+                    test_stream = TestStreamUdp(loop=self._loop, test=self, stream_id=self._next_stream_id)
                 else:
                     raise IPerf3Exception('The required data protocol is not implemented (yet)')
+                
+                # Skip 2 in streams numbering
+                if self._next_stream_id == 1:
+                    self._next_stream_id = 3
+                else:
+                    self._next_stream_id += 1
+
                 test_stream.create_connection()
                 self._streams.append(test_stream)
         except OSError as exc:

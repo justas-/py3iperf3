@@ -68,7 +68,7 @@ class TcpTestProtocol(asyncio.Protocol):
         self._stream.data_received(data)
 
     def connection_lost(self, exc):
-        self._logger.debug('Connection lost!', exc_info=exc)
+        self._logger.debug('[%s] Connection lost!', self._sock_id, exc_info=exc)
 
     def send_data(self, data):
         self._transport.write(data)

@@ -30,6 +30,7 @@ class ControlProtocol(asyncio.Protocol):
         """Connection lost callback"""
         if not self._is_closed:
             self._logger.debug('Control connection lost!', exc_info=exc)
+        self._test.stop()
 
     def data_received(self, data):
         """Data received callback"""

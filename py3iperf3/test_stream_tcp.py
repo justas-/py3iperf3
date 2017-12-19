@@ -116,3 +116,17 @@ class TestStreamTcp(BaseTestStream):
             stats['end'],
             stats['bytes'],
             speed_str))
+
+    def get_final_stats(self):
+        """Get final stats object"""
+
+        stats_obj = {
+            "id":self._stream_id,
+            "bytes":sum([x['bytes'] for x in self._stat_objs]),
+            "retransmits":-1,
+            "jitter":0,
+            "errors":0,
+            "packets":0,
+        }
+
+        return stats_obj

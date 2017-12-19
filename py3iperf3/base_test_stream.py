@@ -15,6 +15,7 @@ class BaseTestStream(object):
         self._loop = kwargs.get('loop')
         self._test = kwargs.get('test')
         self._logger = logging.getLogger('py3iperf3')
+        self._stream_id = kwargs.get('stream_id')
 
         self.done = False
 
@@ -51,6 +52,11 @@ class BaseTestStream(object):
             if self._test.file is not None:
                 self._data_source_sink = open(
                     self._test.file, 'rb+')
+
+    @property
+    def socket_id(self):
+        """Get small int representing socket"""
+        return self._test_protocol.socket_id
 
     def save_stats(self, t_start, t_end, t_sec):
         """Save interval stats to the stats object &
