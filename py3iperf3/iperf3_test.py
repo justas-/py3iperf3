@@ -26,6 +26,7 @@ class Iperf3Test(object):
         self._loop = loop
         self._parameters = TestSettings()
         self._logger = logging.getLogger('py3iperf3')
+        self._disposed = False
 
         self._streams = []
         self._interval_stats = []
@@ -131,7 +132,29 @@ class Iperf3Test(object):
 
     def stop(self):
         """Stop the test"""
+
+        # One shot only
+        if self._disposed:
+            return
+
         self._client_cleanup()
+        self._disposed = True
+
+    def set_control_connection(self, control_protocol, cookie):
+        """Link a test with a control protocol in the server"""
+
+        # Update the state of the test
+        self._control_protocol = control_protocol
+        control_protocol.set_server(self)
+        self._cookie = cookie
+        self._role = 's'
+
+        # Initiate parameters exchange
+        self._set_and_send_state(Iperf3State.PARAM_EXCHANGE)
+
+    def new_data_connection(self, data_protocol):
+        """Link this test with a new data connection"""
+        pass
 
     def server_connection_established(self, control_protocol):
         """Callback on established server connection"""
@@ -140,6 +163,10 @@ class Iperf3Test(object):
         # Make and send cookie
         self._control_protocol.send_data(
             self.cookie.encode('ascii'))
+
+    def control_data_received(self, _, message):
+        """Handle data received from the client"""
+        pass
 
     def handle_server_message(self, message):
         """Handle message received from the control socket"""
@@ -206,6 +233,7 @@ class Iperf3Test(object):
             elif self._state == Iperf3State.DISPLAY_RESULTS:
                 self.display_results()
                 self._client_cleanup()
+                self._disposed = True
             elif self._state == Iperf3State.IPERF_DONE:
                 pass
             elif self._state == Iperf3State.SERVER_TERMINATE:
@@ -592,7 +620,7 @@ class Iperf3Test(object):
         while num_retries > 0:
             try:
                 control_connect_coro = self._loop.create_connection(
-                    lambda: ControlProtocol(self),
+                    lambda: ControlProtocol(test=self),
                     **connect_params)
                 self._loop.create_task(control_connect_coro)
                 break

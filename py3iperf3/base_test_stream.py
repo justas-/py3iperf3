@@ -152,7 +152,15 @@ class BaseTestStream(object):
         """Send data over the test protocol"""
 
         data_block = self._get_block()
-        self._test_protocol.send_data(data_block)
+
+        # We might run out of memory in some cases
+        try:
+            self._test_protocol.send_data(data_block)
+        except MemoryError as exc:
+            # Program failed at memory alloc
+            # Not a biggy, try later...
+            self._logger.exception('[%s] Stream Out-of-Memory: ', self.socket_id,exc_info=exc)
+            return
 
         self._blocks_tx_this_interval += 1
         self._bytes_tx_this_interval += len(data_block)
@@ -168,6 +176,10 @@ class BaseTestStream(object):
 
     def stop_stream(self):
         """Stop sending data"""
+
+        # One shot action
+        if self.done:
+            return
 
         self._logger.debug('Stop stream called')
         self._time_stream_stop = time.time()

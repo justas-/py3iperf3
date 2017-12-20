@@ -29,6 +29,12 @@ class TestSettings(object):
     get_server_output = False
     window = None
 
+    # Server specific options
+    server = False
+    one_off = False
+    daemon = False
+    pidfile = None
+
     # The following attributes are ignored
     log_filename = None
     debug = None

@@ -10,17 +10,23 @@ import os
 from py3iperf3.utils import setup_logging
 from py3iperf3.iperf3_client import Iperf3Client
 from py3iperf3.iperf3_api import Iperf3TestProto
+from py3iperf3.iperf3_server import Iperf3Server
 
-def run_client(params):
+def run(params):
     """Runt the client"""
 
     loop = asyncio.get_event_loop()
     params = vars(params)
 
+    print(params)
+
     setup_logging(**params)
 
-    iperf3_client = Iperf3Client(loop=loop)
-    iperf3_test = iperf3_client.create_test(test_parameters=params)
+    if params['server']:
+        server = Iperf3Server(params, loop=loop)
+    else:
+        iperf3_client = Iperf3Client(loop=loop)
+        iperf3_test = iperf3_client.create_test(test_parameters=params)
 
     # Ensure KeyboardIrq works on Windows
     if os.name == 'nt':
@@ -30,12 +36,20 @@ def run_client(params):
         loop.call_later(0.5, wakeup)
 
     try:
-        loop.call_soon(iperf3_client.run_all_tests)
+        if params['server']:
+            server.start_server()
+        else:
+            loop.call_soon(iperf3_client.run_all_tests)
         loop.run_forever()
     except KeyboardInterrupt:
         pass
 
-    iperf3_client.stop_all_tests()
+    # Cleanup on exit
+    if params['server']:
+        server.stop_server()
+    else:
+        iperf3_client.stop_all_tests()
+
     loop.close()
     logging.shutdown()
 
@@ -46,6 +60,8 @@ def main():
     parser = argparse.ArgumentParser(description='A Python native iPerf3 client')
 
     # TODO Args
+    parser.add_argument('--server', help='Run in server mode', action='store_true')
+    parser.add_argument('--one-off', help='Process a single client and exit', action='store_true')
     parser.add_argument('--server-address', help='IP Address of the remote peer')
     parser.add_argument('--server-port', help='Port to connect to', type=int)
     parser.add_argument('--client-port', help='Bind lcient to the given port', type=int)
@@ -74,7 +90,7 @@ def main():
             params.protocol = Iperf3TestProto.TCP
 
     # Run the client
-    run_client(params)
+    run(params)
 
 if __name__ == '__main__':
     main()

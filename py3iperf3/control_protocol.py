@@ -9,11 +9,11 @@ import binascii
 class ControlProtocol(asyncio.Protocol):
     """asyncio protocol for control connection"""
 
-    def __init__(self, test):
+    def __init__(self, test=None):
         """Initialize the protocol"""
-
-        self._transport = None
         self._test = test
+        
+        self._transport = None
         self._peer_data = None
         self._is_closed = False
 
