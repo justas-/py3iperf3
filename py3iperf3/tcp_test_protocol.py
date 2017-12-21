@@ -20,9 +20,13 @@ class TcpTestProtocol(asyncio.Protocol):
         """Return socket id"""
         return self._sock_id
 
-    def set_server(self, server):
+    def set_owner(self, owner, is_stream = False):
         """Update owner to test from server once ready"""
-        self._server = server
+        if is_stream:
+            self._logger.debug('TCP Proto Stream is set!')
+            self._stream = owner
+        else:
+            self._server = owner
 
     def connection_made(self, transport):
         """Connection established call-back"""

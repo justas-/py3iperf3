@@ -193,3 +193,10 @@ class BaseTestStream(object):
             close(self._data_source_sink)
 
         self.done = True
+
+    def set_proto(self, proto):
+        """Set the protocol when working in server mode"""
+        # Link us with proto
+        self._test_protocol = proto
+        # Link proto with us
+        proto.set_owner(self, is_stream=True)

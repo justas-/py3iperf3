@@ -61,13 +61,27 @@ class Iperf3Test(object):
         self._set_test_parameters(test_parameters)
 
     @property
+    def next_stream_id(self):
+        """Get next stream id"""
+        if self._next_stream_id == 2:
+            self._next_stream_id += 1
+
+        temp = self._next_stream_id
+        self._next_stream_id += 1
+
+        return temp
+        
+    @property
     def role(self):
         """Get test role"""
         return self._role
 
     @property
     def sender(self):
-        return not self._parameters.reverse
+        if self._role == 'c':
+            return not self._parameters.reverse
+        else:
+            return self._parameters.reverse
 
     @property
     def remote_results(self):
@@ -145,16 +159,49 @@ class Iperf3Test(object):
 
         # Update the state of the test
         self._control_protocol = control_protocol
-        control_protocol.set_server(self)
+        control_protocol.set_owner(self)
         self._cookie = cookie
         self._role = 's'
 
         # Initiate parameters exchange
         self._set_and_send_state(Iperf3State.PARAM_EXCHANGE)
+        self._string_drain = True
 
-    def new_data_connection(self, data_protocol):
+    def new_data_connection(self, proto):
         """Link this test with a new data connection"""
-        pass
+
+        if self._parameters.test_protocol == Iperf3TestProto.TCP:
+            stream = TestStreamTcp(loop=self._loop, test=self, stream_id=self.next_stream_id)
+            stream.set_proto(proto)
+        else:
+            pass
+
+        self._streams.append(stream)
+        if len(self._streams) == self._parameters.parallel:
+            self._set_and_send_state(Iperf3State.TEST_START)
+
+            self._stream_start_time = time.time()
+            self._hdl_stats = self._loop.call_later(
+                self._parameters.report_interval,
+                self._collect_print_stats)
+            
+            self._set_and_send_state(Iperf3State.TEST_RUNNING)
+
+    def _parse_received_params(self, received_string):
+        """Parse parameters received from the client"""
+
+        test_params = json.loads(received_string)
+        print(received_string)
+
+        # TODO: Apply received parameters
+        for key, value in test_params.items():
+            if key is 'parallel':
+                self._parameters.parallel = value
+            if key is 'reverse':
+                self._parameters.reverse = True
+
+        # Request streams
+        self._set_and_send_state(Iperf3State.CREATE_STREAMS)
 
     def server_connection_established(self, control_protocol):
         """Callback on established server connection"""
@@ -166,7 +213,38 @@ class Iperf3Test(object):
 
     def control_data_received(self, _, message):
         """Handle data received from the client"""
-        pass
+        
+        # Special handling of length prefixed strings
+        if self._string_drain:
+            self._drain_to_string(message)
+            return
+
+        if len(message) == 1:
+            op_codes = struct.unpack('>B', message)
+            self._logger.debug("codes: %s", op_codes)
+        elif len(message) == 2:
+            op_codes = struct.unpack('>BB', message)
+            self._logger.debug("codes: %s", op_codes)
+        else:
+            raise IPerf3Exception('Whoopsy Daisy too many op-codes from the server!')
+
+        for op_code in op_codes:
+            self._logger.debug('Op code: %s', op_code)
+            state = Iperf3State(op_code)
+            self._logger.debug('Received %s state from the client', state)
+            self._state = state
+
+            if self._state == Iperf3State.TEST_END:
+                # Client done sending
+                self._stream_stop_time = time.time()
+                if self._hdl_stats is not None:
+                    self._hdl_stats.cancel()
+                    self._hdl_stats = None
+                self._set_and_send_state(Iperf3State.EXCHANGE_RESULTS)
+                self._string_drain = True
+
+            elif self._state == Iperf3State.DISPLAY_RESULTS:
+                self.display_results()
 
     def handle_server_message(self, message):
         """Handle message received from the control socket"""
@@ -401,7 +479,21 @@ class Iperf3Test(object):
         self._string_drain = False
 
         self._logger.debug('String draining done!')
-        self._save_received_results(received_string)
+        
+        if self.role == 'c':
+            self._save_received_results(received_string)
+        else:
+            # This is server
+            if self._state == Iperf3State.PARAM_EXCHANGE:
+                self._parse_received_params(received_string)
+            elif self._state == Iperf3State.EXCHANGE_RESULTS:
+                # Send our results
+                self._send_results()
+                # Collect client's results
+                self._save_received_results(received_string)
+                # Transition to show results state
+                self._set_and_send_state(Iperf3State.DISPLAY_RESULTS)
+                # TODO: cleanup
 
         # If anything extra is left - process as normal
         if scratch:
