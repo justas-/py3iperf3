@@ -4,7 +4,7 @@ Default run settings
 
 from py3iperf3.iperf3_api import Iperf3TestProto
 
-class TestSettings(object):
+class Iperf3TestSettings(object):
     """Default settings of a test"""
 
     test_protocol = Iperf3TestProto.TCP
@@ -38,4 +38,3 @@ class TestSettings(object):
     # The following attributes are ignored
     log_filename = None
     debug = None
-

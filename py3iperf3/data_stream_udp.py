@@ -1,13 +1,16 @@
 """
+Test data stream over UDP.
 """
 import struct
 import time
 
-from py3iperf3.base_test_stream import BaseTestStream
-from py3iperf3.udp_test_protocol import UdpTestProtocol
+from py3iperf3.data_stream_base import BaseTestStream
+from py3iperf3.data_protocol_udp import UdpTestProtocol
 
 class TestStreamUdp(BaseTestStream):
-    """ """
+    """
+    UDP Test data stream.
+    """
 
     def __init__(self, **kwargs):
         """Init the UDP stream"""
@@ -20,12 +23,14 @@ class TestStreamUdp(BaseTestStream):
         self._pkt_cnt_64bit = self._test._parameters.udp64bitcounters
         self._err_count = 0
         self._ooo_count = 0
-        
+
         self._jitter = 0
         self._prev_transit = 0
 
     def create_connection(self):
-        """ """
+        """
+        Create UDP datagram socket.
+        """
         connect_coro = self._loop.create_datagram_endpoint(
             lambda: UdpTestProtocol(test_stream=self),
             remote_addr=(
@@ -34,16 +39,18 @@ class TestStreamUdp(BaseTestStream):
         self._loop.create_task(connect_coro)
 
     def connection_established(self, test_protocol):
-        """ """
+        """
+        Callback on connection established.
+        """
         self._test_protocol = test_protocol
 
         for _ in range(1):
             self._test_protocol.send_data(
-                struct.pack('>I',12345678))
+                struct.pack('>I', 12345678))
 
         self._logger.info('UDP Test: initial data')
 
-    def data_received(self, data, remote_addr = None):
+    def data_received(self, data, remote_addr=None):
         """Data received callback"""
 
         # Ignore '123456789'
@@ -100,17 +107,17 @@ class TestStreamUdp(BaseTestStream):
         # Handle 64-bit counters
         if self._pkt_cnt_64bit:
             udp_extras = struct.pack('>IIQ',
-                                 time_sec,
-                                 time_usec,
-                                 self._pkt_cnt)
+                                     time_sec,
+                                     time_usec,
+                                     self._pkt_cnt)
             block_bytes = udp_extras + block_bytes[16:]
         else:
             udp_extras = struct.pack('>III',
-                                 time_sec,
-                                 time_usec,
-                                 self._pkt_cnt)
+                                     time_sec,
+                                     time_usec,
+                                     self._pkt_cnt)
             block_bytes = udp_extras + block_bytes[12:]
-        
+
         return block_bytes
 
     def _send_block(self):

@@ -32,5 +32,7 @@ class UdpTestProtocol(asyncio.DatagramProtocol):
         self._stream.data_received(data, addr)
 
     def send_data(self, data):
+        """
+        Write data to transport.
+        """
         self._transport.sendto(data)
-

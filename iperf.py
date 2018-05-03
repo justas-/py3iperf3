@@ -26,11 +26,12 @@ def run(params):
         server = Iperf3Server(params, loop=loop)
     else:
         iperf3_client = Iperf3Client(loop=loop)
-        iperf3_test = iperf3_client.create_test(test_parameters=params)
+        iperf3_client.create_test(test_parameters=params)
 
     # Ensure KeyboardIrq works on Windows
     if os.name == 'nt':
         def wakeup():
+            """Fake wakeup"""
             # Call again later
             loop.call_later(0.5, wakeup)
         loop.call_later(0.5, wakeup)
@@ -59,7 +60,6 @@ def main():
     # Setup an argument parser
     parser = argparse.ArgumentParser(description='A Python native iPerf3 client')
 
-    # TODO Args
     parser.add_argument('--server', help='Run in server mode', action='store_true')
     parser.add_argument('--one-off', help='Process a single client and exit', action='store_true')
     parser.add_argument('--server-address', help='IP Address of the remote peer')
@@ -77,7 +77,7 @@ def main():
     parser.add_argument('--title', help='Add free text to the results')
     parser.add_argument('--get-server-output', help='Get results from the server', action='store_true')
     parser.add_argument('--window', help='Set Socket TX/RX buffer size in Bytes', type=int)
-    
+
     # Parse the command line params
     params = parser.parse_args()
 

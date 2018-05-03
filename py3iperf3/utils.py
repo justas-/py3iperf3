@@ -8,10 +8,10 @@ import logging
 
 from py3iperf3.iperf3_api import COOKIE_SIZE
 
-DEC_BIT = ['bit', 'Kib', 'Mib', 'Gib', 'Tib', 'Pib']
-DEC_BYTE = ['Byte', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB']
-BIN_BIT = ['bit', 'kbit', 'mbit', 'gbit', 'tbit', 'pbit']
-BIN_BYTE = ['Byte', 'KByte', 'MByte', 'GByte', 'TByte', 'PByte']
+DEC_BIT = ['bits', 'Kibs', 'Mibs', 'Gibs', 'Tibs', 'Pibs']
+DEC_BYTE = ['Byte', 'KiBytes', 'MiBytes', 'GiBytes', 'TiBytes', 'PiBytes']
+BIN_BIT = ['bits', 'Kbits', 'Mbits', 'Gbits', 'Tbits', 'Pbits']
+BIN_BYTE = ['Bytes', 'KBytes', 'MBytes', 'GBytes', 'TBytes', 'PBytes']
 
 def make_cookie():
     """Make a test cookie"""

@@ -1,11 +1,19 @@
+"""
+Python asyncio Protocol extension for TCP use.
+"""
 import asyncio
 import logging
 import socket
 
 class TcpTestProtocol(asyncio.Protocol):
-    """description of class"""
+    """
+    Extension of asyncio protocol for TCP data
+    """
 
     def __init__(self, test_stream=None, no_delay=False, window=None, server=None):
+        """
+        Initialize TCP Protocol object.
+        """
         self._transport = None
         self._socket = None
         self._stream = test_stream
@@ -20,7 +28,7 @@ class TcpTestProtocol(asyncio.Protocol):
         """Return socket id"""
         return self._sock_id
 
-    def set_owner(self, owner, is_stream = False):
+    def set_owner(self, owner, is_stream=False):
         """Update owner to test from server once ready"""
         if is_stream:
             self._logger.debug('TCP Proto Stream is set!')
@@ -56,7 +64,7 @@ class TcpTestProtocol(asyncio.Protocol):
         local_data = self._socket.getsockname()
         peer_data = transport.get_extra_info('peername')
 
-        self._logger.info('[%s] local %s port %s connected to %s port %s',
+        self._logger.info('[%s] local %s:%s connected to %s:%s',
                           self._sock_id, local_data[0], local_data[1],
                           peer_data[0], peer_data[1])
 
@@ -80,30 +88,47 @@ class TcpTestProtocol(asyncio.Protocol):
             self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self._window)
 
         # Print current buf sizes:
-        rx_buf = self._socket.getsockopt(
-                socket.SOL_SOCKET,
-                socket.SO_RCVBUF)
-        tx_buf = self._socket.getsockopt(
-                socket.SOL_SOCKET,
-                socket.SO_SNDBUF)
+        rx_buf = self._socket.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
+        tx_buf = self._socket.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF)
 
-        self._logger.debug('Socket TX buffer: %s B; RX buffer: %s B;',
-                           tx_buf, rx_buf) 
+        self._logger.debug('Socket TX buffer: %s B; RX buffer: %s B;', tx_buf, rx_buf)
 
         self._stream.connection_established(self)
 
     def data_received(self, data):
-        """Data received call-back"""
-        #self._logger.debug('Received %s bytes', len(data))
-
-        # Inform server that we have data until the stream is ready
+        """
+        Data received call-back.
+        """
+        # Inform the server that we have data until the stream is ready
         if self._stream is None:
             self._server.control_data_received(self, data)
         else:
             self._stream.data_received(data)
 
     def connection_lost(self, exc):
-        self._logger.debug('[%s] Connection lost!', self._sock_id, exc_info=exc)
+        """
+        Callback on connection lost.
+        """
+        if self._stream.done:
+            # Stream is done, no need to panic
+            pass
+        else:
+            self._logger.debug('[%s] Connection lost!', self._sock_id, exc_info=exc)
 
     def send_data(self, data):
+        """
+        Write data to transport.
+        """
         self._transport.write(data)
+
+    def pause_writing(self):
+        """
+        Pause writing callback from transport.
+        """
+        self._stream.pause_writing()
+
+    def resume_writing(self):
+        """
+        Resume writing callback from transport.
+        """
+        self._stream.resume_writing()

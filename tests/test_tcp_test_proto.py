@@ -4,7 +4,7 @@ Unit-test for the TCP data protocol.
 import unittest
 import unittest.mock
 
-from py3iperf3.tcp_test_protocol import TcpTestProtocol
+from py3iperf3.data_protocol_tcp import TcpTestProtocol
 
 def fake_logger(message, **kwargs):
     """Mockup of logger"""
@@ -67,8 +67,33 @@ class TestTcpTestProtocol(unittest.TestCase):
         """Test logging of connection lost event"""
 
         mock_stream = unittest.mock.MagicMock()
+        mock_stream.done = True
+
         tcp_proto = TcpTestProtocol(mock_stream)
 
+        # Done stream should not call debug
         tcp_proto.connection_lost(None)
+        assert not tcp_proto._logger.debug.called
 
+        # Not done stream should call debug
+        mock_stream.done = False
+        tcp_proto.connection_lost(None)
         assert tcp_proto._logger.debug.called
+
+    def test_socket_no(self):
+        """
+        Test setting/getting socket ID
+        """
+        mock_socket = unittest.mock.MagicMock()
+        mock_socket.fileno = unittest.mock.MagicMock(return_value=7)
+
+        mock_transport = unittest.mock.MagicMock()
+        mock_transport.get_extra_info = unittest.mock.MagicMock(return_value=mock_socket)
+
+        mock_stream = unittest.mock.MagicMock()
+
+        tcp_proto = TcpTestProtocol(mock_stream)
+        tcp_proto.connection_made(mock_transport)
+
+        assert mock_transport.fileno.called_once_with('socket')
+        self.assertEqual(tcp_proto.socket_id, 7)

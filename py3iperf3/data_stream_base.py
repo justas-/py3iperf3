@@ -5,7 +5,6 @@ import random
 import logging
 import time
 
-from py3iperf3.iperf3_api import Iperf3TestProto
 from py3iperf3.error import IPerf3Exception
 
 class BaseTestStream(object):
@@ -63,16 +62,17 @@ class BaseTestStream(object):
            return an opaque stats obj to the caller.
         """
         pass
-        
+
     def print_last_stats_entry(self):
         """Print the last entry in the stats storage"""
         pass
 
-    def print_sum_stats(stat_list):
+    def print_sum_stats(self, stat_list):
         """Given a list of stats objects print a sum"""
         pass
 
     def create_connection(self):
+        """Create a new connections"""
         pass
 
     def data_received(self, data, remote_addr=None):
@@ -88,8 +88,9 @@ class BaseTestStream(object):
                 raise IPerf3Exception('Failed to write RX data to file')
 
     def _try_sending(self):
-        """Check the gating and send if possible"""
-
+        """
+        Check the time/block/bytes gating and send if possible.
+        """
         if self._stop_on == 't':
             # Time based test will be stopped by the test class
             self._send_block()
@@ -159,7 +160,7 @@ class BaseTestStream(object):
         except MemoryError as exc:
             # Program failed at memory alloc
             # Not a biggy, try later...
-            self._logger.exception('[%s] Stream Out-of-Memory: ', self.socket_id,exc_info=exc)
+            self._logger.exception('[%s] Stream Out-of-Memory: ', self.socket_id, exc_info=exc)
             return
 
         self._blocks_tx_this_interval += 1
@@ -168,9 +169,7 @@ class BaseTestStream(object):
     def start_stream(self):
         """Start sending data"""
 
-        self._logger.debug('Start stream called')
         self._time_stream_start = time.time()
-
         if self._sending_handle is None:
             self._sending_handle = self._loop.call_soon(self._try_sending)
 
@@ -190,7 +189,7 @@ class BaseTestStream(object):
 
         # Close file handle if file is used
         if self._test.file:
-            close(self._data_source_sink)
+            self._data_source_sink.close()
 
         self.done = True
 

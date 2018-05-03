@@ -7,8 +7,8 @@ import asyncio
 import socket
 
 from py3iperf3.iperf3_test import Iperf3Test
-from py3iperf3.tcp_test_protocol import TcpTestProtocol
-from py3iperf3.test_settings import TestSettings
+from py3iperf3.data_protocol_tcp import TcpTestProtocol
+from py3iperf3.settings import Iperf3TestSettings
 from py3iperf3.iperf3_api import COOKIE_SIZE
 
 class Iperf3Server(object):
@@ -25,7 +25,7 @@ class Iperf3Server(object):
         self._use_processes = use_processes
         self._logger = logging.getLogger('py3iperf3')
 
-        self._parameters = TestSettings()
+        self._parameters = Iperf3TestSettings()
         for attr, value in parameters.items():
             # Set default if Not given
             if value is not None:
@@ -39,8 +39,8 @@ class Iperf3Server(object):
         """Start listening sockets and wait for connections"""
 
         # Bind on
-        if self._parameters.server_address is not '':
-            local_addr = self._options.server_address
+        if self._parameters.server_address != '':
+            local_addr = self._parameters.server_address
         else:
             if self._parameters.ip_version == 4:
                 local_addr = '0.0.0.0'
@@ -73,7 +73,7 @@ class Iperf3Server(object):
 
     def control_data_received(self, proto, data):
         """Handle data from orphaned connection"""
-        
+
         # Add data to receive buffer
         self._orphans[proto].extend(data)
 

@@ -3,7 +3,6 @@ Asyncio protocol for test control communication.
 """
 import asyncio
 import logging
-import socket
 import binascii
 
 class ControlProtocol(asyncio.Protocol):
@@ -12,7 +11,7 @@ class ControlProtocol(asyncio.Protocol):
     def __init__(self, test=None):
         """Initialize the protocol"""
         self._test = test
-        
+
         self._transport = None
         self._peer_data = None
         self._is_closed = False

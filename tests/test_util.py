@@ -27,16 +27,16 @@ class TestUtilFunctions(unittest.TestCase):
             '0 bit')
         self.assertEqual(
             data_size_formatter(100, True, False),
-            '100 bit')
+            '100 bits')
         self.assertEqual(
             data_size_formatter(1200, True, False),
-            '1.2 Kib')
+            '1.2 Kibs')
         self.assertEqual(
             data_size_formatter(1220000, True, False),
-            '1.22 Mib')
+            '1.22 Mibs')
         self.assertEqual(
             data_size_formatter(1226000000, True, False),
-            '1.23 Gib')
+            '1.23 Gibs')
 
         self.assertEqual(
             data_size_formatter(800, True, True),
@@ -44,14 +44,14 @@ class TestUtilFunctions(unittest.TestCase):
 
         self.assertEqual(
             data_size_formatter(167654, False, False),
-            '163.72 kbit')
+            '163.72 Kbits')
         self.assertEqual(
             data_size_formatter(76894335, False, False),
-            '73.33 mbit')
+            '73.33 Mbits')
 
         self.assertEqual(
             data_size_formatter(80000, False, True),
-            '9.77 KByte')
+            '9.77 KBytes')
 
         # Test negatives:
         self.assertEqual(
@@ -63,11 +63,11 @@ class TestUtilFunctions(unittest.TestCase):
 
         self.assertEqual(
             data_size_formatter(10000, False, False, 'k'),
-            '10 Kib')
+            '10 Kibs')
 
         self.assertEqual(
             data_size_formatter(80000, False, False, 'K'),
-            '10 KiB')
+            '10 KiBytes')
 
     @unittest.mock.patch('py3iperf3.utils.logging.StreamHandler')
     @unittest.mock.patch('py3iperf3.utils.logging.getLogger')

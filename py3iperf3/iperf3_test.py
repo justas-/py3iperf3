@@ -2,7 +2,6 @@
 A class representing a single iPerf3 test on both client and the server.
 """
 import logging
-import asyncio
 import socket
 import struct
 import json
@@ -12,10 +11,10 @@ from py3iperf3.control_protocol import ControlProtocol
 from py3iperf3.utils import make_cookie, data_size_formatter
 from py3iperf3.iperf3_api import Iperf3State, Iperf3TestProto
 from py3iperf3.iperf3_api import DEFAULT_BLOCK_TCP, DEFAULT_BLOCK_UDP
-from py3iperf3.test_stream_tcp import TestStreamTcp
-from py3iperf3.test_stream_udp import TestStreamUdp
+from py3iperf3.data_stream_tcp import TestStreamTcp
+from py3iperf3.data_stream_udp import TestStreamUdp
 from py3iperf3.error import IPerf3Exception
-from py3iperf3.test_settings import TestSettings
+from py3iperf3.settings import Iperf3TestSettings
 
 class Iperf3Test(object):
     """description of class"""
@@ -24,7 +23,7 @@ class Iperf3Test(object):
         """ """
         self._master = master   # Ref to Client or Server
         self._loop = loop
-        self._parameters = TestSettings()
+        self._parameters = Iperf3TestSettings()
         self._logger = logging.getLogger('py3iperf3')
         self._disposed = False
 
@@ -70,7 +69,7 @@ class Iperf3Test(object):
         self._next_stream_id += 1
 
         return temp
-        
+
     @property
     def role(self):
         """Get test role"""
@@ -78,19 +77,18 @@ class Iperf3Test(object):
 
     @property
     def sender(self):
+        """
+        In client role sender is us, unless reverse.
+        """
         if self._role == 'c':
             return not self._parameters.reverse
-        else:
-            return self._parameters.reverse
+
+        return self._parameters.reverse
 
     @property
     def remote_results(self):
         """Get results received from remote peer"""
         return self._remote_results
-
-    @property
-    def role(self):
-        return self._role
 
     @property
     def cookie(self):
@@ -184,7 +182,7 @@ class Iperf3Test(object):
             self._hdl_stats = self._loop.call_later(
                 self._parameters.report_interval,
                 self._collect_print_stats)
-            
+
             self._set_and_send_state(Iperf3State.TEST_RUNNING)
 
     def _parse_received_params(self, received_string):
@@ -195,9 +193,9 @@ class Iperf3Test(object):
 
         # TODO: Apply received parameters
         for key, value in test_params.items():
-            if key is 'parallel':
+            if key == 'parallel':
                 self._parameters.parallel = value
-            if key is 'reverse':
+            if key == 'reverse':
                 self._parameters.reverse = True
 
         # Request streams
@@ -213,7 +211,7 @@ class Iperf3Test(object):
 
     def control_data_received(self, _, message):
         """Handle data received from the client"""
-        
+
         # Special handling of length prefixed strings
         if self._string_drain:
             self._drain_to_string(message)
@@ -277,16 +275,6 @@ class Iperf3Test(object):
                 # Create required streams
                 self._create_streams()
             elif self._state == Iperf3State.TEST_START:
-                #if (iperf_init_test(test) < 0)
-                #   return -1;
-                #if (create_client_timers(test) < 0)
-                #   return -1;
-                #if (create_client_omit_timer(test) < 0)
-                #   return -1;
-	            #if (!test->reverse)
-		        #   if (iperf_create_send_timers(test) < 0)
-		        #       return -1;
-
                 if not self._parameters.reverse:
                     for stream in self._streams:
                         stream.start_stream()
@@ -479,7 +467,7 @@ class Iperf3Test(object):
         self._string_drain = False
 
         self._logger.debug('String draining done!')
-        
+
         if self.role == 'c':
             self._save_received_results(received_string)
         else:
@@ -596,7 +584,7 @@ class Iperf3Test(object):
                     test_stream = TestStreamUdp(loop=self._loop, test=self, stream_id=self._next_stream_id)
                 else:
                     raise IPerf3Exception('The required data protocol is not implemented (yet)')
-                
+
                 # Skip 2 in streams numbering
                 if self._next_stream_id == 1:
                     self._next_stream_id = 3
@@ -652,7 +640,7 @@ class Iperf3Test(object):
 
         json_str = json.dumps(param_obj)
         self._logger.debug('Settings JSON (%s): %s',
-                      len(json_str), json_str)
+                           len(json_str), json_str)
 
         len_bytes = struct.pack('!i', len(json_str))
         self._control_protocol.send_data(len_bytes)
@@ -663,8 +651,8 @@ class Iperf3Test(object):
         """Make a control connection to the server"""
 
         self._logger.info('Connecting to server %s:%s',
-                     self._parameters.server_address,
-                     self._parameters.server_port)
+                          self._parameters.server_address,
+                          self._parameters.server_port)
 
         # Connect to
         connect_params = {
@@ -673,11 +661,10 @@ class Iperf3Test(object):
         }
 
         # Bind on
-        if (self._parameters.client_address is not None or
-            self._parameters.client_port is not None):
+        if self._parameters.client_address or self._parameters.client_port:
 
             if self._parameters.client_address is None:
-                if (self._parameters.ip_version is not None and
+                if (self._parameters.ip_version and
                     self._parameters.ip_version == 6):
 
                     local_addr = '::'
@@ -695,14 +682,10 @@ class Iperf3Test(object):
             connect_params['local_addr'] = (local_addr, local_port)
 
         # IP Version
-        if (self._parameters.ip_version is not None and
-            self._parameters.ip_version == 4):
-
+        if self._parameters.ip_version == 4:
             connect_params['family'] = socket.AF_INET
 
-        elif (self._parameters.ip_version is not None and
-              self._parameters.ip_version == 6):
-
+        elif self._parameters.ip_version == 6:
             connect_params['family'] = socket.AF_INET6
 
         self._logger.debug('Connect params: %s', connect_params)
