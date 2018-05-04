@@ -85,13 +85,13 @@ class TestStreamTcp(BaseTestStream):
 
         # Save stats object
         stats = {
-		    "socket":	        self._test_protocol.socket_id,
-			"start":	        t_start,
-			"end":	            t_end,
-			"seconds":	        t_sec,
-			"bytes":	        num_bytes,
-			"bits_per_second":	int(num_bytes * 8 / t_sec),
-			"omitted":	        False
+            "socket":	        self._test_protocol.socket_id,
+            "start":	        t_start,
+            "end":	            t_end,
+            "seconds":	        t_sec,
+            "bytes":	        num_bytes,
+            "bits_per_second":	int(num_bytes * 8 / t_sec),
+            "omitted":	        False
         }
 
         # Reset the counters

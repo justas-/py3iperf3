@@ -75,6 +75,9 @@
     <Compile Include="tests\test_control_protocol.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="tests\test_stream_tcp.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="tests\test_tcp_test_proto.py">
       <SubType>Code</SubType>
     </Compile>
