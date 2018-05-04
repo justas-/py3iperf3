@@ -58,6 +58,8 @@ class TestStreamUdp(BaseTestStream):
         if len(data) == 4:
             return
 
+        self._pkt_rx_this_interval += 1
+
         # Extract time and packet count
         if self._pkt_cnt_64bit:
             (time_sec, time_usec, pkt_num) = struct.unpack(
@@ -171,7 +173,7 @@ class TestStreamUdp(BaseTestStream):
         size_str = data_size_formatter(int(stats['bytes'])*8, in_bytes=True)
         speed_str = data_size_formatter(int(stats['bits_per_second']))
 
-        base_str = '[{}] {:.2f}-{:.2f} sec {} B {}/sec'.format(
+        base_str = '[{}] {:.2f}-{:.2f} sec {} {}/sec'.format(
             stats['socket'],
             stats['start'],
             stats['end'],
@@ -183,7 +185,7 @@ class TestStreamUdp(BaseTestStream):
             stat_str = '{} {}'.format(base_str, stats['packets'])
         else:
             # TODO: Jitter et. al.
-            stat_str = base_str
+            stat_str = '{}  X      X/{}'.format(base_str, stats['packets'])
 
         # Print entry
         self._logger.info(stat_str)
@@ -193,6 +195,6 @@ class TestStreamUdp(BaseTestStream):
         Different headers based on direction.
         """
         if self._test.sender:
-            return '[ ID] Interval           Transfer     Bandwidth   Total datagrams'
+            return '[ ID] Interval      Transfer    Bandwidth      Total datagrams'
         else:
-            return '[ ID] Interval           Transfer     Bandwidth   Total datagrams'
+            return '[ ID] Interval      Transfer    Bandwidth       Jitter   Lost/Total datagrams'

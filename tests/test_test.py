@@ -196,9 +196,25 @@ class TestIperf3TestClass(unittest.TestCase):
         """Test cleaning up of the test"""
         mock_control = unittest.mock.MagicMock()
         mock_master = unittest.mock.MagicMock()
+        mock_stream = unittest.mock.MagicMock()
+        
+        our_stat = {
+            'id':7,
+            'bytes':100000
+        }
+        mock_stream.get_final_stats = unittest.mock.MagicMock(return_value=our_stat)
 
         iperf_test = Iperf3Test(mock_master, None, {})
         iperf_test._control_protocol = mock_control
+        iperf_test._streams.append(mock_stream)
+        iperf_test._remote_results = {'streams':[
+            {
+                'id':7,
+                'bytes': 123456,
+            }
+        ]}
+        iperf_test._stream_stop_time = 2
+        iperf_test._stream_start_time = 1
 
         iperf_test.handle_server_message(struct.pack(
             '!c', bytes([Iperf3State.DISPLAY_RESULTS.value])))
@@ -207,6 +223,7 @@ class TestIperf3TestClass(unittest.TestCase):
         assert mock_control.send_data.called
         assert mock_control.close_connection.called
         assert mock_master.test_done.called_with(iperf_test)
+        assert mock_stream.get_stats_header.called
 
     def test_sting_drain(self):
         """Test draining the string"""

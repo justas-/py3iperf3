@@ -27,7 +27,7 @@ def main():
         'parallel':1,
         #'blockcount':10,
         #'bytes': 100000000,
-        'reverse':False,
+        'reverse':True,
         'test_protocol': Iperf3TestProto.UDP,
         'window':16000
     }

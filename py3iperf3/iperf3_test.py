@@ -319,6 +319,7 @@ class Iperf3Test(object):
         """
         self._logger.debug('Received results: %s', self.remote_results)
         self._logger.info('- - - - - - - - - - - - - - - - - - - - - - - - -')
+        self._logger.info('Test Complete. Summary Results:')
         header = self._streams[0].get_stats_header()
         self._logger.info(header)
 
