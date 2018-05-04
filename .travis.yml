@@ -1,12 +1,13 @@
-matrix:
-  include:
-    - language: generic
-      os: osx
-      before_install:
-        - brew update
-        - brew upgrade python
-        - virtualenv env -p python
-        - source env/bin/activate
+# Some time when Travis Py3 support is working fine...
+#matrix:
+#  include:
+#    - language: generic
+#      os: osx
+#      before_install:
+#        - brew update
+#        - brew upgrade python
+#        - virtualenv env -p python
+#        - source env/bin/activate
 
 language: python
 
