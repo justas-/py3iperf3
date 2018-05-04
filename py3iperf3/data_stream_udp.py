@@ -79,6 +79,10 @@ class TestStreamUdp(BaseTestStream):
             # Update largest seen
             self._pkt_cnt = pkt_num
         else:
+            # We got missing packet
+            if pkt_num < self._pkt_cnt:
+                self._lost_in_period -= 1
+
             self._ooo_count += 1
             if self._err_count > 0:
                 self._err_count -= 1
@@ -140,6 +144,7 @@ class TestStreamUdp(BaseTestStream):
 
         stats = super().get_final_stats()
         stats['packets'] = sum([x['packets'] for x in self._stat_objs])
+        stats['errors'] = sum([x['errors'] for x in self._stat_objs])
 
         return stats
 
@@ -153,9 +158,12 @@ class TestStreamUdp(BaseTestStream):
             stats['packets'] = self._pkt_tx_this_interval
         else:
             stats['packets'] = self._pkt_rx_this_interval
+            stats['errors'] = self._err_count
+            stats['jitter'] = self._jitter
          
         self._pkt_tx_this_interval = 0
         self._pkt_rx_this_interval = 0
+        self._err_count = 0
 
         self._stat_objs.append(stats)
 
@@ -185,7 +193,8 @@ class TestStreamUdp(BaseTestStream):
             stat_str = '{} {}'.format(base_str, stats['packets'])
         else:
             # TODO: Jitter et. al.
-            stat_str = '{}  X      X/{}'.format(base_str, stats['packets'])
+            stat_str = '{}  {:.4f} ms   {}/{}'.format(
+                base_str, stats['jitter'] * 1000, stats['errors'], stats['packets'])
 
         # Print entry
         self._logger.info(stat_str)
@@ -197,4 +206,4 @@ class TestStreamUdp(BaseTestStream):
         if self._test.sender:
             return '[ ID] Interval      Transfer    Bandwidth      Total datagrams'
         else:
-            return '[ ID] Interval      Transfer    Bandwidth       Jitter   Lost/Total datagrams'
+            return '[ ID] Interval      Transfer    Bandwidth         Jitter   Lost/Total datagrams'

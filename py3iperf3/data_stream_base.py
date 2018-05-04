@@ -243,7 +243,8 @@ class BaseTestStream(object):
             "seconds":	        t_sec,
             "bytes":	        num_bytes,
             "bits_per_second":	int(num_bytes * 8 / t_sec),
-            "omitted":	        False
+            "omitted":	        False,
+            "errors":           0,
         }
 
         # Reset the counters

@@ -96,7 +96,7 @@ class TestTcpTestProtocol(unittest.TestCase):
         tcp_proto = TcpTestProtocol(mock_stream)
         tcp_proto.connection_made(mock_transport)
 
-        assert mock_transport.fileno.called_once_with('socket')
+        assert mock_transport.get_extra_info.called_once_with('socket')
         self.assertEqual(tcp_proto.socket_id, 7)
 
     def test_flow_control(self):
