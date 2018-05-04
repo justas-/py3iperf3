@@ -20,15 +20,15 @@ def main():
         'server_port':5201,
         #'client_port':1337,
         'ip_version':4,
-        'test_duration':20,
+        'test_duration':10,
         'debug': False,
         #'log_filename':r'C:\py\test.txt',
         'format':'g',
-        'parallel':2,
+        'parallel':1,
         #'blockcount':10,
         #'bytes': 100000000,
-        'reverse':True,
-        'test_protocol': Iperf3TestProto.TCP,
+        'reverse':False,
+        'test_protocol': Iperf3TestProto.UDP,
         'window':16000
     }
 

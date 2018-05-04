@@ -72,37 +72,14 @@ class TestStreamTcp(BaseTestStream):
 
         self._logger.debug('Stream: Sent cookie')
 
-    def save_stats(self, t_start, t_end, t_sec):
+    def get_interval_stats(self, t_start, t_end, t_sec):
         """
-        Save test stats to a stats object.
+        Get interval stats from base. Nothing to extend.
         """
 
-        # Account for test direction
-        if self._test.sender:
-            num_bytes = self._bytes_tx_this_interval
-        else:
-            num_bytes = self._bytes_rx_this_interval
-
-        # Save stats object
-        stats = {
-            "socket":	        self._test_protocol.socket_id,
-            "start":	        t_start,
-            "end":	            t_end,
-            "seconds":	        t_sec,
-            "bytes":	        num_bytes,
-            "bits_per_second":	int(num_bytes * 8 / t_sec),
-            "omitted":	        False
-        }
-
-        # Reset the counters
-        self._bytes_rx_this_interval = 0
-        self._bytes_tx_this_interval = 0
-        self._blocks_tx_this_interval = 0
-        self._pkt_tx_this_interval = 0
-        self._pkt_rx_this_interval = 0
-
-        # Save and return
+        stats = super().get_interval_stats(t_start, t_end, t_sec)
         self._stat_objs.append(stats)
+
         return stats
 
     def print_last_stats_entry(self):
@@ -124,20 +101,6 @@ class TestStreamTcp(BaseTestStream):
             stats['end'],
             size_str,
             speed_str))
-
-    def get_final_stats(self):
-        """Get final stats object"""
-
-        stats_obj = {
-            "id":self._stream_id,
-            "bytes":sum([x['bytes'] for x in self._stat_objs]),
-            "retransmits":-1,
-            "jitter":0,
-            "errors":0,
-            "packets":0,
-        }
-
-        return stats_obj
 
     def _try_sending(self):
         """
@@ -162,3 +125,6 @@ class TestStreamTcp(BaseTestStream):
         """
         self._paused = False
         self._sending_handle = self._loop.call_soon(self._try_sending)
+
+    def get_stats_header(self):
+        return '[ ID] Interval           Transfer     Bandwidth'

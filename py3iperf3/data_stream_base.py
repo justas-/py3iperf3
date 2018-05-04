@@ -199,3 +199,56 @@ class BaseTestStream(object):
         self._test_protocol = proto
         # Link proto with us
         proto.set_owner(self, is_stream=True)
+
+    def get_stats_header(self):
+        """
+        Get stats headers for each proto/direction case.
+        """
+        pass
+
+    def get_final_stats(self):
+        """
+        Get the final stats object
+        """
+
+        stats_obj = {
+            "id":self._stream_id,
+            "bytes":sum([x['bytes'] for x in self._stat_objs]),
+            "retransmits":-1,
+            "jitter":0,
+            "errors":0,
+            "packets":0,
+        }
+
+        return stats_obj
+
+    def get_interval_stats(self, t_start, t_end, t_sec):
+        """
+        Get stats for the given interval.
+        N.B. Extending function should save object in stats array!
+        N.B. Extending function should reset protocol specific counters!
+        """
+
+        # Account for test direction
+        if self._test.sender:
+            num_bytes = self._bytes_tx_this_interval
+        else:
+            num_bytes = self._bytes_rx_this_interval
+
+        # Save stats object
+        stats = {
+            "socket":	        self._test_protocol.socket_id,
+            "start":	        t_start,
+            "end":	            t_end,
+            "seconds":	        t_sec,
+            "bytes":	        num_bytes,
+            "bits_per_second":	int(num_bytes * 8 / t_sec),
+            "omitted":	        False
+        }
+
+        # Reset the counters
+        self._bytes_rx_this_interval = 0
+        self._bytes_tx_this_interval = 0
+        self._blocks_tx_this_interval = 0
+
+        return stats
