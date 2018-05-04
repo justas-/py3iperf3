@@ -5,7 +5,7 @@ matrix:
       before_install:
         - brew update
         - brew upgrade python
-        - virtualenv env -p python3
+        - virtualenv env -p python
         - source env/bin/activate
 
 language: python
